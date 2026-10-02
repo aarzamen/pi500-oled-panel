@@ -1,12 +1,12 @@
 # Explicit source-release contents; wheel contents are controlled by pyproject.toml.
 exclude *
-include README.md LICENSE MANIFEST.in pyproject.toml .gitignore
+include README.md CHANGELOG.md LICENSE MANIFEST.in pyproject.toml .gitignore
 include config.example.json hardware_check.py test_hardware_check.py
 recursive-include oled_panel *.py
 include oled_panel/assets/george-startup.png
 recursive-include tests *.py
 include system/install.py system/install.sh system/uninstall.sh system/oled-panel-action
-include docs/setup.md docs/validation.md
+include docs/setup.md docs/validation.md docs/panelbridge.md
 prune .git
 prune .venv
 prune .uv-bootstrap

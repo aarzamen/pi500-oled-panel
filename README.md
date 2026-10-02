@@ -21,6 +21,11 @@ Other boards, OLED variants, and display managers have not been validated.
 
 ## Start here
 
+The development version includes optional [PanelBridge startup controls](docs/panelbridge.md)
+for a wireless desktop monitor. This integration has software tests and rendered
+previews; deployment and physical validation are pending. Standalone operation
+keeps the seven pages and existing boot choices below.
+
 Follow [setup and recovery](docs/setup.md) for complete installation commands,
 from a fresh Pi through foreground checks, staged installation, and a supervised
 reboot. Read [validation and limitations](docs/validation.md) for the evidence

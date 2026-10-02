@@ -12,7 +12,8 @@ import time
 
 from PIL import Image, ImageDraw, ImageFont
 from hardware_check import PanelHardware
-from .config import load_config
+from .config import INTEGRATED_BOOT_LABELS, load_config
+from .runtime import read_boot_id
 
 RUNTIME = Path('/run/oled-panel')
 
@@ -43,16 +44,21 @@ def atomic_write(path: Path, data: str) -> None:
         Path(temporary).unlink(missing_ok=True)
 
 
-def render_choice(selected: str, remaining: float, *, navigating: bool):
+def render_choice(selected: str, remaining: float, *, navigating: bool, panelbridge=False):
     image = Image.new('1', (128, 64))
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default(size=9)
     draw.text((2, 2), 'STARTUP', font=font, fill=1)
     draw.line((0, 15, 127, 15), fill=1)
-    lines = [f"{'>' if selected == 'desktop' else ' '} Desktop",
-             f"{'>' if selected == 'headless' else ' '} Headless (this boot)",
-             'K1/K2 choose K3 OK', 'K4 saved default',
-             f"Default in {math.ceil(remaining)}s"]
+    if panelbridge:
+        lines = [f"{'>' if selected == mode else ' '} {label}"
+                 for mode, label in INTEGRATED_BOOT_LABELS.items()]
+        lines += ['K1/K2 choose K3 OK', f'K4 default {math.ceil(remaining)}s']
+    else:
+        lines = [f"{'>' if selected == 'desktop' else ' '} Desktop",
+                 f"{'>' if selected == 'headless' else ' '} Headless (this boot)",
+                 'K1/K2 choose K3 OK', 'K4 saved default',
+                 f"Default in {math.ceil(remaining)}s"]
     for row, line in enumerate(lines):
         draw.text((2, 17 + row * 9), line, font=font, fill=1)
     return image
@@ -65,8 +71,12 @@ def choose_boot_mode(config, hardware, clock=time) -> str:
     mode = 'desktop'
     try:
         clear_choice(runtime)
+        integrated = config.get('panelbridge', False)
+        if type(integrated) is not bool:
+            raise ValueError('invalid integration setting')
+        modes = ('wireless', 'desktop', 'headless') if integrated else ('desktop', 'headless')
         default = config['boot_default'].lower()
-        if default not in ('desktop', 'headless'):
+        if default not in modes:
             raise ValueError('invalid saved default')
         start = clock.monotonic()
         panel = hardware()
@@ -94,18 +104,22 @@ def choose_boot_mode(config, hardware, clock=time) -> str:
                 mode = default
                 break
             if 'up' in pressed or 'down' in pressed:
-                selected = 'headless' if selected == 'desktop' else 'desktop'
+                direction = -1 if 'up' in pressed else 1
+                selected = modes[(modes.index(selected) + direction) % len(modes)]
                 navigating = True
             # A chord cannot accidentally confirm the selection it just changed.
             elif pressed == {'select'}:
                 mode = selected
                 break
             remaining = 30 - elapsed if navigating else min(8 - chooser_elapsed, 30 - elapsed)
-            panel.show(render_choice(selected, remaining, navigating=navigating))
+            panel.show(render_choice(selected, remaining, navigating=navigating, panelbridge=integrated))
             clock.sleep(0.02)
         owned, panel = panel, None
         owned.close()  # no skip marker may survive a failed close
-        atomic_write(runtime / 'choice.json', json.dumps({'mode': mode}) + '\n')
+        choice = {'mode': mode}
+        if integrated:
+            choice.update(panelbridge=True, boot_id=read_boot_id())
+        atomic_write(runtime / 'choice.json', json.dumps(choice) + '\n')
         if mode == 'headless':
             atomic_write(runtime / 'headless', 'headless\n')
         return mode
@@ -130,7 +144,8 @@ def main(argv=None):
         clear_choice(RUNTIME)
         config = load_config(args.config)
         default = Path('/etc/oled-panel/default').read_text().strip()
-        if default not in ('desktop', 'headless'):
+        modes = ('wireless', 'desktop', 'headless') if config['panelbridge'] else ('desktop', 'headless')
+        if default not in modes:
             raise ValueError('invalid root-owned default')
         config['boot_default'] = default.title()
         choose_boot_mode(config, lambda: PanelHardware(argparse.Namespace(**config)))

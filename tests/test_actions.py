@@ -73,6 +73,27 @@ class HelperTests(unittest.TestCase):
         self.assertEqual((self.runtime / 'headless').read_text(), 'current boot')
         self.assertFalse(self.commands)
 
+    def test_wireless_default_requires_explicit_installed_integration(self):
+        for enabled in (None, False, 1, 'true', [], {}):
+            self.config['panelbridge'] = enabled
+            with self.subTest(enabled=enabled), self.assertRaises(ValueError):
+                self.call('set-default', 'wireless')
+            self.assertEqual(self.default.read_text(), 'desktop\n')
+        self.config['panelbridge'] = True
+        self.call('set-default', 'wireless')
+        self.assertEqual(self.default.read_text(), 'wireless\n')
+        self.assertFalse(self.commands)
+
+    def test_start_desktop_preserves_integrated_choice_as_historical_preference(self):
+        self.config['panelbridge'] = True
+        choice = {'mode': 'headless', 'panelbridge': True, 'boot_id': '11111111-1111-4111-8111-111111111111'}
+        (self.runtime / 'headless').write_text('headless\n')
+        (self.runtime / 'choice.json').write_text(json.dumps(choice))
+        self.call('start-desktop')
+        self.assertFalse((self.runtime / 'headless').exists())
+        self.assertEqual(json.loads((self.runtime / 'choice.json').read_text()), choice)
+        self.assertEqual(self.commands, [['/usr/bin/systemctl', '--no-block', 'start', 'lightdm.service']])
+
     def test_runtime_symlink_cannot_redirect_root_cleanup(self):
         external = self.root / 'external'; external.mkdir()
         (external / 'headless').write_text('preserve')

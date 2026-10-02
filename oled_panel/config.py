@@ -9,7 +9,10 @@ from urllib.parse import urlparse
 DEFAULT = {"bus": 1, "address": 60, "keys": True, "polarity": "low",
            "gpiochip": 0, "pins": [17, 27, 22, 23], "rotate": 0,
            "display_manager": "lightdm", "boot_default": "Desktop",
-           "workload": None, "power": None}
+           "panelbridge": False, "workload": None, "power": None}
+
+INTEGRATED_BOOT_LABELS = {'wireless': 'Wireless desktop', 'desktop': 'Desktop only',
+                          'headless': 'Console only'}
 
 
 def load_config(path: str | Path | None) -> dict:
@@ -34,8 +37,11 @@ def load_config(path: str | Path | None) -> dict:
         raise ValueError("pins must be four distinct GPIO numbers from 4 to 27")
     if config["rotate"] not in (0, 2):
         raise ValueError("rotate must be 0 or 2")
-    if config["boot_default"] not in ("Desktop", "Headless"):
-        raise ValueError("boot_default must be Desktop or Headless")
+    if type(config['panelbridge']) is not bool:
+        raise ValueError('panelbridge must be boolean')
+    defaults = ('Wireless', 'Desktop', 'Headless') if config['panelbridge'] else ('Desktop', 'Headless')
+    if config["boot_default"] not in defaults:
+        raise ValueError('boot_default must be ' + ' or '.join(defaults))
     manager = config["display_manager"]
     if manager is not None and (not isinstance(manager, str) or not manager or
                                 any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@_.-" for c in manager)):

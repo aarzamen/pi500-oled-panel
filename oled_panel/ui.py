@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import time
+import math
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -36,11 +37,91 @@ class UIState:
     one_time_mode: str | None = None
     boot_default: str | None = "Desktop"
     action_error: str = ""
+    panelbridge: bool = False
+    monitor_index: int = 0
+    monitor_selection: str | None = None
+    monitor_pending: bool = False
 
 
 def initial_state(*, now: float = 0.0, current_mode: str | None = None,
-                  boot_default: str | None = "Desktop") -> UIState:
-    return UIState(last_input=now, current_mode=current_mode, boot_default=boot_default)
+                  boot_default: str | None = "Desktop", panelbridge: bool = False) -> UIState:
+    return UIState(last_input=now, current_mode=current_mode, boot_default=boot_default,
+                   panelbridge=panelbridge)
+
+
+def page_names(state: UIState):
+    return ("Monitor", *PAGES) if state.panelbridge else PAGES
+
+
+def menu_items(state: UIState):
+    return (("Monitor", "monitor-menu"), *MENU) if state.panelbridge else MENU
+
+
+def default_choices(state: UIState):
+    return (("Wireless desktop", "wireless"), ("Desktop only", "desktop"),
+            ("Console only", "headless")) if state.panelbridge else (("Desktop", "desktop"), ("Headless", "headless"))
+
+
+def monitor_status(state: UIState, sample: dict):
+    status = sample.get("panelbridge")
+    if (state.panelbridge and isinstance(status, dict)
+            and is_render_fresh({"sampled_at": sample.get("panelbridge_sampled_at")})):
+        trial = status.get("trial")
+        if isinstance(trial, dict) and type(trial.get("seconds_remaining")) in (int, float):
+            age = max(0, time.time() - sample["panelbridge_sampled_at"])
+            return {**status, "trial": {**trial, "seconds_remaining": max(0, trial["seconds_remaining"] - age)}}
+        return status
+    return {"available": False, "state": "unavailable", "actions": [],
+            "message": "Start Desktop; wait for fresh monitor status.",
+            "profile": {}, "receiver": {}, "trial": None}
+
+
+def monitor_actions(status: dict):
+    """Fixed capability and state gates, also checked by the action worker."""
+    if status.get("available") is not True:
+        return []
+    current = status.get("state")
+    if current not in {"stopped", "discovering", "connecting", "streaming", "retrying", "error"}:
+        return []
+    capabilities = status.get("actions")
+    if not isinstance(capabilities, list):
+        return []
+    trial = status.get("trial")
+    trial = trial if isinstance(trial, dict) and trial.get("kind") == "profile" else None
+    remaining = trial.get("seconds_remaining") if trial else None
+    keep = type(remaining) in (int, float) and math.isfinite(remaining) and remaining > 0
+    possible = []
+    if current in {"stopped", "error"}:
+        possible.append(("Reconnect" if current == "error" else "Start monitor", "monitor-start"))
+    if current != "stopped":
+        possible.append(("Stop monitor", "monitor-stop"))
+    if current == "streaming" and trial and keep:
+        possible.append(("Keep display trial", "monitor-keep"))
+    if trial or current == "error":
+        possible.append(("Revert display trial" if trial else "Restore last good", "monitor-revert"))
+    return [(label, action) for label, action in possible if action in capabilities]
+
+
+def monitor_menu_items(state: UIState):
+    actions = [] if state.monitor_pending else monitor_actions(monitor_status(state, state.snapshot))
+    return actions + [("Details", "monitor-details")]
+
+
+def _monitor_selection(state: UIState):
+    items = monitor_menu_items(state)
+    if state.monitor_selection is not None:
+        state.monitor_index = next((index for index, (_, action) in enumerate(items)
+                                    if action == state.monitor_selection), len(items) - 1)
+    else:
+        state.monitor_index = min(state.monitor_index, len(items) - 1)
+    state.monitor_selection = items[state.monitor_index][1]
+    return items
+
+
+def _menu_lines(items, selected):
+    first = max(0, selected - 4)
+    return [f"{'>' if index == selected else ' '}{label}"
+            for index, (label, _) in enumerate(items) if first <= index < first + 5]
 
 
 def update_ui(state: UIState, event: dict, now: float) -> tuple[UIState, str | None]:
@@ -106,31 +187,55 @@ def update_ui(state: UIState, event: dict, now: float) -> tuple[UIState, str | N
         elif key == "select":
             state.detail_index = (state.detail_index + 1) % len(detail_pages(state, state.snapshot))
         elif key in {"up", "down"}:
-            state.page = (state.page + (-1 if key == "up" else 1)) % len(PAGES)
+            state.page = (state.page + (-1 if key == "up" else 1)) % len(page_names(state))
             state.view = "page"
         return state, None
     if state.view == "default":
         if key == "back":
             state.view = "menu"
         elif key in {"up", "down"}:
-            state.default_index = 1 - state.default_index
+            state.default_index = (state.default_index + (-1 if key == "up" else 1)) % len(default_choices(state))
         elif key == "select":
-            state.confirm_action = "set-default " + ("desktop", "headless")[state.default_index]
+            state.confirm_action = "set-default " + default_choices(state)[state.default_index][1]
             state.view = "confirm"
             state.select_wait_release = True
             state.action_sent = False
+        return state, None
+    if state.view == "monitor-menu":
+        items = _monitor_selection(state)
+        if key == "back":
+            state.view = "menu"
+        elif key in {"up", "down"}:
+            state.monitor_index = (state.monitor_index + (-1 if key == "up" else 1)) % len(items)
+            state.monitor_selection = items[state.monitor_index][1]
+        elif key == "select":
+            action = items[state.monitor_index][1]
+            if action == "monitor-details":
+                state.page, state.view, state.detail_index = 0, "detail", 0
+            else:
+                state.view = "page"
+                state.page = 0
+                return state, action
         return state, None
     if state.view == "menu":
         if key == "back":
             state.view = "page"
         elif key == "up":
-            state.menu_index = (state.menu_index - 1) % len(MENU)
+            state.menu_index = (state.menu_index - 1) % len(menu_items(state))
         elif key == "down":
-            state.menu_index = (state.menu_index + 1) % len(MENU)
+            state.menu_index = (state.menu_index + 1) % len(menu_items(state))
         elif key == "select":
-            action = MENU[state.menu_index][1]
+            action = menu_items(state)[state.menu_index][1]
             if action is None:
                 state.view = "default"
+                if state.panelbridge:
+                    selected = (state.boot_default or "").lower()
+                    state.default_index = next((index for index, (_, mode) in enumerate(default_choices(state))
+                                                if mode == selected), 1)
+            elif action == "monitor-menu":
+                state.view = "monitor-menu"
+                state.monitor_index = 0
+                state.monitor_selection = monitor_menu_items(state)[0][1]
             else:
                 state.confirm_action = action
                 state.view = "confirm"
@@ -143,9 +248,9 @@ def update_ui(state: UIState, event: dict, now: float) -> tuple[UIState, str | N
         state.view = "detail"
         state.detail_index = 0
     elif key == "up":
-        state.page = (state.page - 1) % len(PAGES)
+        state.page = (state.page - 1) % len(page_names(state))
     elif key == "down":
-        state.page = (state.page + 1) % len(PAGES)
+        state.page = (state.page + 1) % len(page_names(state))
     return state, None
 
 
@@ -197,7 +302,22 @@ def _flag_summary(flags: dict | None, period: str) -> str:
 
 
 def _detail_fields(state: UIState, sample: dict) -> list[tuple[str, str]]:
-    page = state.page
+    page = state.page - int(state.panelbridge)
+    if page == -1:
+        controller = monitor_status(state, sample)
+        profile = controller.get("profile") or {}
+        receiver = controller.get("receiver") or {}
+        trial = controller.get("trial") or {}
+        return [("Monitor", controller.get("state", "unavailable")),
+                ("Message", controller.get("message") or "No controller message"),
+                ("Receiver", receiver.get("name") or "unavailable"),
+                ("Source setting", _profile_line(profile)),
+                ("Wire setting", _profile_line(profile, wire=True)),
+                ("Trial", trial.get("message") or (f"{trial.get('seconds_remaining')} seconds remaining" if trial else "No current trial")),
+                ("LAN IP", (sample.get("addresses") or ["unavailable"])[0] if is_render_fresh(sample) else "unavailable"),
+                ("Current mode", state.current_mode or "unavailable"),
+                ("This boot", state.one_time_mode or "unavailable"),
+                ("Saved default", state.boot_default or "unavailable")]
     if page == 0:
         return [("Hostname", sample.get("hostname") or "unavailable"),
                 ("Best address", (sample.get("addresses") or ["unavailable"])[0]),
@@ -254,7 +374,7 @@ THERMAL_FLAGS = (("under_voltage", "Undervoltage"), ("frequency_capped", "Freque
 
 def detail_pages(state: UIState, snapshot: dict) -> list[tuple[str, list[str]]]:
     """Wrap every field into five-line pages so complete values are reachable."""
-    if not snapshot or not is_render_fresh(snapshot):
+    if not (state.panelbridge and state.page == 0) and (not snapshot or not is_render_fresh(snapshot)):
         return [("", ["Telemetry unavailable"])]
     pages = []
     for label, value in _detail_fields(state, snapshot):
@@ -268,13 +388,12 @@ def _lines(state: UIState, sample: dict) -> list[str]:
     if state.view == "action-error":
         return ["Action failed"] + _wrap_pixels(state.action_error)[:3] + ["K4 dismiss / see journal"]
     if state.view == "menu":
-        return [f"{'>' if index == state.menu_index else ' '}{label}"
-                for index, (label, _) in enumerate(MENU)]
+        return _menu_lines(menu_items(state), state.menu_index)
+    if state.view == "monitor-menu":
+        items = _monitor_selection(state)
+        return _menu_lines(items, state.monitor_index)
     if state.view == "default":
-        return ["Saved boot default:",
-                f"{'>' if state.default_index == 0 else ' '}Desktop",
-                f"{'>' if state.default_index == 1 else ' '}Headless",
-                "K3 select / K4 back"]
+        return ["Saved boot default:"] + _menu_lines(default_choices(state), state.default_index) + ["K3 select / K4 back"]
     if state.view == "confirm":
         label = (state.confirm_action or "").replace("-", " ").title()
         return [label, "Hold K3 Select 2s", "K4 Cancel",
@@ -282,10 +401,19 @@ def _lines(state: UIState, sample: dict) -> list[str]:
     if state.view == "detail":
         pages = detail_pages(state, sample)
         return pages[state.detail_index % len(pages)][1]
+    if state.panelbridge and state.page == 0:
+        controller = monitor_status(state, sample)
+        available = controller.get("available") is True
+        current = controller.get("state", "unavailable") if available else "unavailable"
+        address = (sample.get("addresses") or ["unavailable"])[0] if is_render_fresh(sample) else "unavailable"
+        return ["Working..." if state.monitor_pending else current.title(),
+                _profile_line(controller.get("profile") or {}) if available else "Start Desktop to connect",
+                f"LAN {address}", controller.get("message") or "K3 controller details",
+                "K3 details / K4 actions"]
     if not sample or not is_render_fresh(sample):
         return ["Telemetry unavailable", "Waiting for fresh sample", "K4 actions"]
     addr = (sample.get("addresses") or ["unavailable"])[0]
-    page = state.page
+    page = state.page - int(state.panelbridge)
     if page == 0:
         cpu = sample.get("cpu_percent")
         ram = sample.get("ram_available_bytes")
@@ -330,16 +458,27 @@ def is_render_fresh(sample: dict, *, now: float | None = None) -> bool:
     return isinstance(timestamp, (int, float)) and 0 <= now - timestamp <= 3.0
 
 
+def _profile_line(profile: dict, *, wire=False):
+    width, height, rate = (("wire_width", "wire_height", "wire_fps") if wire else
+                           ("source_width", "source_height", "content_fps"))
+    if not isinstance(profile, dict) or any(type(profile.get(key)) is not int or profile[key] <= 0
+                                           for key in (width, height, rate)):
+        return "Mode unavailable"
+    return f"{profile[width]}x{profile[height]} {profile[rate]} fps"
+
+
 def render_ui(state: UIState, snapshot: dict) -> Image.Image:
     image = Image.new("1", (128, 64), 0)
     if state.blank:
         return image
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default(size=9)
-    title = PAGES[state.page] if state.view in {"page", "detail"} else state.view.title()
+    title = page_names(state)[state.page] if state.view in {"page", "detail"} else state.view.title()
+    if state.view == "monitor-menu":
+        title = "Monitor actions"
     indicator = None
     if state.view == "page":
-        indicator = f"{state.page + 1}/7"
+        indicator = f"{state.page + 1}/{len(page_names(state))}"
     elif state.view == "detail":
         indicator = f"{state.detail_index % len(detail_pages(state, snapshot)) + 1}/{len(detail_pages(state, snapshot))}"
     if indicator:

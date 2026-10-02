@@ -13,9 +13,14 @@ import tempfile
 
 BACKUP = Path('var/lib/oled-panel/install-backup')
 HELPER = '/usr/local/libexec/oled-panel-action'
+PANELBRIDGE_ENROLLMENT = Path('/etc/panelbridge/enrollment.json')
+PANELBRIDGE_CAPABILITY = Path('/usr/share/panelbridge/oled-integration.json')
 
 
 def render(user, project, config, manager):
+    integrated = config.get('panelbridge', False)
+    if type(integrated) is not bool:
+        raise ValueError('panelbridge must be boolean')
     if not re.fullmatch(r'[a-z_][a-z0-9_-]*', user):
         raise ValueError('user must be a simple local account name')
     if not re.fullmatch(r'/[A-Za-z0-9_./-]+', project) or '..' in Path(project).parts:
@@ -68,11 +73,14 @@ ConditionPathExists=!/run/oled-panel/headless
 ''')
     allowed = ['start-desktop', 'stop-desktop', 'reboot', 'shutdown',
                'set-default desktop', 'set-default headless']
+    if integrated:
+        allowed.append('set-default wireless')
     add('/etc/sudoers.d/oled-panel', f'{user} ALL=(root) NOPASSWD: ' +
         ', '.join(f'{HELPER} {action}' for action in allowed) + '\n', 0o440)
-    add('/etc/oled-panel/actions.json', json.dumps({'display_manager': manager}, indent=2) + '\n')
+    add('/etc/oled-panel/actions.json', json.dumps({'display_manager': manager, 'panelbridge': integrated}, indent=2) + '\n')
     add('/etc/oled-panel/default', 'desktop\n')
     device = dict(config); device['display_manager'] = manager; device['boot_default'] = 'Desktop'
+    device['panelbridge'] = integrated
     add('/etc/oled-panel/device.json', json.dumps(device, indent=2) + '\n')
     artifacts[HELPER.lstrip('/')] = {'data': Path(__file__).with_name('oled-panel-action').read_bytes(), 'mode': 0o755}
     artifacts['etc/systemd/system/multi-user.target.wants/oled-panel.service'] = {
@@ -218,6 +226,75 @@ def uninstall(root, runner=run):
     runner(['/usr/bin/systemctl', 'daemon-reload'])
 
 
+def read_panelbridge_record(path, label):
+    """Read one fixed installed record through pinned, root-owned directories."""
+    if path not in (PANELBRIDGE_ENROLLMENT, PANELBRIDGE_CAPABILITY):
+        raise ValueError('unsupported PanelBridge record')
+    directory = None
+    try:
+        for part in path.parent.parts:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+            if directory is not None:
+                os.close(directory)
+            directory = child
+            info = os.fstat(directory)
+            if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
+                raise PermissionError('unsafe record parent')
+        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                     dir_fd=directory)
+        with os.fdopen(fd, 'rb') as stream:
+            info = os.fstat(stream.fileno())
+            if (not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022
+                    or info.st_nlink != 1):
+                raise PermissionError('unsafe record file')
+            raw = stream.read(65537)
+    except FileNotFoundError:
+        raise RuntimeError(f'PanelBridge {label} is missing; integration requires an installed, enrolled desktop account') from None
+    except OSError:
+        raise RuntimeError(f'PanelBridge {label} is unsafe or unreadable; preserve it and inspect ownership and permissions') from None
+    finally:
+        if directory is not None:
+            os.close(directory)
+    try:
+        if len(raw) > 65536:
+            raise ValueError
+        def unique_object(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError('duplicate record key')
+                result[key] = value
+            return result
+        return json.loads(raw, object_pairs_hook=unique_object)
+    except (ValueError, TypeError, RecursionError):
+        raise RuntimeError(f'PanelBridge {label} is invalid; expected a bounded JSON record') from None
+
+
+def validate_panelbridge_integration(uid):
+    enrollment = read_panelbridge_record(PANELBRIDGE_ENROLLMENT, 'enrollment')
+    try:
+        if not isinstance(enrollment, dict) or set(enrollment) - {'api_version', 'normal_uid', 'rescue_uid'}:
+            raise ValueError
+        normal, rescue = enrollment['normal_uid'], enrollment.get('rescue_uid')
+        if (type(enrollment.get('api_version')) is not int or enrollment['api_version'] != 1
+                or type(normal) is not int or not 1000 <= normal < 2**31
+                or (rescue is not None and (type(rescue) is not int or not 0 < rescue < 2**31 or rescue == normal))):
+            raise ValueError
+    except (ValueError, KeyError, TypeError):
+        raise RuntimeError('PanelBridge enrollment is invalid; expected a supported desktop-account binding') from None
+    if normal != uid:
+        raise ValueError('OLED --user must match the PanelBridge enrolled desktop account')
+    try:
+        capability = read_panelbridge_record(PANELBRIDGE_CAPABILITY, 'OLED capability receipt')
+        if (not isinstance(capability, dict) or set(capability) != {'api_version', 'startup_choice', 'session_bus'}
+                or type(capability.get('api_version')) is not int or capability['api_version'] != 1
+                or type(capability.get('startup_choice')) is not int or capability['startup_choice'] != 1
+                or capability.get('session_bus') != 'org.panelbridge.Session1'):
+            raise ValueError
+    except (RuntimeError, ValueError):
+        raise RuntimeError('Update PanelBridge before enabling OLED integration: its OLED capability receipt is missing, unsafe or unsupported') from None
+
+
 def preflight(args):
     model = Path('/proc/device-tree/model').read_text().rstrip('\0\n')
     if not model.startswith('Raspberry Pi 500 Rev'):
@@ -239,12 +316,17 @@ def preflight(args):
     if os.geteuid() == 0: check = ['/usr/sbin/runuser', '-u', args.user, '--'] + check
     elif os.getuid() != account.pw_uid: raise PermissionError('render as the dashboard user or root')
     run(check)
+    supplied = json.loads(config.read_text())
+    if not isinstance(supplied, dict) or type(supplied.get('panelbridge', False)) is not bool:
+        raise ValueError('panelbridge must be boolean in the device configuration')
+    if supplied.get('panelbridge', False) or getattr(args, 'panelbridge', False):
+        validate_panelbridge_integration(account.pw_uid)
     resolved = Path('/etc/systemd/system/display-manager.service').resolve(strict=True)
     manager = resolved.name
     if not resolved.is_file(): raise ValueError('missing resolved display manager')
     target = run(['/usr/bin/systemctl', 'get-default'])
     if target != 'graphical.target': raise ValueError('expected existing graphical.target; refusing to change it')
-    return json.loads(config.read_text()), manager, {'default_target': target, 'display_manager': manager,
+    return supplied, manager, {'default_target': target, 'display_manager': manager,
            'display_manager_path': str(resolved), 'display_manager_alias': os.readlink('/etc/systemd/system/display-manager.service')}
 
 
@@ -264,6 +346,8 @@ def main(argv=None):
     parser.add_argument('--user')
     parser.add_argument('--project')
     parser.add_argument('--config')
+    parser.add_argument('--panelbridge', action='store_true',
+                        help='enable same-host PanelBridge boot choices; saved default remains Desktop')
     args = parser.parse_args(argv)
     if args.uninstall:
         if os.geteuid() != 0: parser.error('uninstall requires sudo')
@@ -279,6 +363,8 @@ def main(argv=None):
         parser.error('--user, --project and --config are required')
     if not args.render_only and os.geteuid() != 0: parser.error('installation requires sudo')
     config, manager, original = preflight(args)
+    if args.panelbridge:
+        config = {**config, 'panelbridge': True}
     artifacts = render(args.user, args.project, config, manager)
     if args.render_only:
         stage(artifacts, args.render_only)

@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 from queue import Empty, Queue
-from threading import Thread
+from threading import Event, Thread
 import sys
 import signal
 import subprocess
@@ -15,7 +16,90 @@ from hardware_check import PanelHardware
 
 from .config import load_config
 from .metrics import collect_snapshot
-from .ui import PAGES, initial_state, render_ui, update_ui
+from .panelbridge import PanelBridgeClient
+from .ui import initial_state, is_render_fresh, monitor_actions, monitor_status, page_names, render_ui, update_ui
+
+
+class MonitorWorker:
+    """One bounded local-controller worker; input/rendering never waits on D-Bus."""
+    def __init__(self, stop, *, real_actions, client_factory=None):
+        self.stop = stop
+        self.real_actions = real_actions
+        self.client_factory = client_factory or PanelBridgeClient
+        self.statuses = Queue(maxsize=1)
+        self.commands = Queue(maxsize=1)
+        self.results = Queue(maxsize=1)
+        self.pending = Event()
+        self.thread = Thread(target=self._run, daemon=True)
+
+    def start(self):
+        self.thread.start()
+
+    def submit(self, action, observed):
+        if action not in {'monitor-start', 'monitor-stop', 'monitor-keep', 'monitor-revert'}:
+            raise ValueError('unsupported monitor action')
+        if self.pending.is_set() or not self.results.empty() or self.stop[0]:
+            return False
+        self.pending.set()
+        self.commands.put_nowait((action, copy.deepcopy(observed)))
+        return True
+
+    def _publish(self, status, sampled_at):
+        try:
+            self.statuses.get_nowait()
+        except Empty:
+            pass
+        self.statuses.put_nowait({'panelbridge': status, 'panelbridge_sampled_at': sampled_at})
+
+    @staticmethod
+    def _unavailable():
+        return {'available': False, 'state': 'unavailable', 'actions': [],
+                'message': 'Start Desktop; wait for PanelBridge.',
+                'profile': {}, 'receiver': {}, 'trial': None}
+
+    def _run(self):
+        client = None
+        next_sample = 0
+        while not self.stop[0]:
+            if time.monotonic() < next_sample and self.commands.empty():
+                time.sleep(.05)
+                continue
+            sampled_at = time.time()
+            try:
+                if client is None:
+                    client = self.client_factory()
+                current = client.status()
+            except Exception:
+                current = self._unavailable()
+            if self.stop[0]:
+                break
+            self._publish(current, sampled_at)
+            try:
+                action, observed = self.commands.get_nowait()
+            except Empty:
+                next_sample = time.monotonic() + 1
+                continue
+            error = None
+            try:
+                if (not is_render_fresh({'sampled_at': sampled_at}) or
+                        action not in {name for _, name in monitor_actions(current)}):
+                    raise RuntimeError('Monitor action is no longer available. Check fresh status.')
+                if action in {'monitor-keep', 'monitor-revert'}:
+                    if (bool(current.get('trial')) != bool(observed.get('trial')) or
+                            current.get('profile') != observed.get('profile')):
+                        raise RuntimeError('Display trial changed. Review it again before acting.')
+                if self.real_actions:
+                    client.command(action)
+                    print(f'Action accepted: {action}', flush=True)
+                else:
+                    print(f'DRY RUN action: {action}', flush=True)
+            except Exception as failure:
+                error = str(failure)[-240:]
+            # Expire the pre-command capabilities while the next status is read.
+            self._publish(self._unavailable(), time.time())
+            self.results.put_nowait({'action': action, 'error': error})
+            self.pending.clear()
+            next_sample = 0
 
 
 class KeyEdges:
@@ -46,7 +130,7 @@ def _sample_loop(config: dict, samples: Queue, stop: list[bool]) -> None:
 
 def dispatch_action(action: str) -> None:
     allowed = {'start-desktop', 'stop-desktop', 'reboot', 'shutdown',
-               'set-default desktop', 'set-default headless'}
+               'set-default desktop', 'set-default headless', 'set-default wireless'}
     if action not in allowed:
         raise ValueError('unsupported panel action')
     result = subprocess.run(['/usr/bin/sudo', '-n', '/usr/local/libexec/oled-panel-action',
@@ -63,11 +147,15 @@ def perform_action(state, action, dispatch=None):
         dispatch(action)
         print(f'Action accepted: {action}', flush=True)
     except Exception as error:
-        state.view = 'action-error'
-        state.action_error = str(error)
-        state.blank = False
-        state.last_input = time.monotonic()
+        _action_failed(state, str(error))
         print(f'Action failed ({action}): {error}', file=sys.stderr, flush=True)
+
+
+def _action_failed(state, error):
+    state.view = 'action-error'
+    state.action_error = error
+    state.blank = False
+    state.last_input = time.monotonic()
 
 
 def run_foreground(panel, config: dict, *, seconds: float | None, dispatch=None,
@@ -76,28 +164,61 @@ def run_foreground(panel, config: dict, *, seconds: float | None, dispatch=None,
     stop = [False]
     samples: Queue = Queue(maxsize=2)
     sampler = Thread(target=_sample_loop, args=(config, samples, stop), daemon=True)
+    monitor = MonitorWorker(stop, real_actions=dispatch is not None) if config.get('panelbridge') is True else None
     start = time.monotonic()
-    state = initial_state(now=start, boot_default=config["boot_default"])
+    state = initial_state(now=start, boot_default=config["boot_default"], panelbridge=monitor is not None)
     snapshot = {}
     old_frame = None
+
+    def handle_action(action):
+        if action.startswith('monitor-'):
+            if monitor is None:
+                _action_failed(state, 'Monitor integration is disabled.')
+            else:
+                if monitor.submit(action, monitor_status(state, snapshot)):
+                    state.monitor_pending = True
+        else:
+            perform_action(state, action, dispatch)
+
     try:
         edges = KeyEdges(panel.read_keys())
         sampler.start()
+        if monitor is not None:
+            monitor.start()
         while not stopped() and (seconds is None or time.monotonic() - start < seconds):
             now = time.monotonic()
             try:
                 while True:
-                    snapshot = samples.get_nowait()
+                    latest = samples.get_nowait()
+                    for key in ('panelbridge', 'panelbridge_sampled_at'):
+                        if key in snapshot:
+                            latest[key] = snapshot[key]
+                    snapshot = latest
                     state, _ = update_ui(state, {"type": "snapshot", "snapshot": snapshot}, now)
             except Empty:
                 pass
+            if monitor is not None:
+                try:
+                    while True:
+                        snapshot.update(monitor.statuses.get_nowait())
+                        state, _ = update_ui(state, {"type": "snapshot", "snapshot": snapshot}, now)
+                except Empty:
+                    pass
+                try:
+                    while True:
+                        result = monitor.results.get_nowait()
+                        state.monitor_pending = False
+                        if result['error'] is not None:
+                            _action_failed(state, result['error'])
+                except Empty:
+                    pass
             for event in edges.events(panel.read_keys()):
                 state, action = update_ui(state, event, now)
                 if action is not None:
-                    perform_action(state, action, dispatch)
+                    handle_action(action)
             state, action = update_ui(state, {"type": "tick"}, now)
             if action is not None:
-                perform_action(state, action, dispatch)
+                handle_action(action)
             frame = render_ui(state, snapshot)
             encoded = frame.tobytes()
             if encoded != old_frame:
@@ -126,9 +247,15 @@ def _preview(directory: Path, config: dict) -> None:
               "root_free_bytes": 13 * 2**30, "root_used_bytes": 16 * 2**30,
               "root_total_bytes": 29 * 2**30, "uptime_s": 7200,
               "power_watts": None, "power_scope": None, "workload_state": "Not configured"}
-    for page, name in enumerate(PAGES):
+    if config.get('panelbridge') is True:
+        sample.update(panelbridge={'available': True, 'state': 'streaming', 'message': 'Desktop connected',
+                                   'profile': {'source_width': 1280, 'source_height': 720, 'content_fps': 30,
+                                               'wire_width': 1280, 'wire_height': 720, 'wire_fps': 30},
+                                   'receiver': {'name': 'Example monitor'}, 'trial': None,
+                                   'actions': ['monitor-stop']}, panelbridge_sampled_at=time.time())
+    for page, name in enumerate(page_names(initial_state(panelbridge=config.get('panelbridge') is True))):
         state = initial_state(now=time.monotonic(), current_mode="Desktop",
-                              boot_default=config["boot_default"])
+                              boot_default=config["boot_default"], panelbridge=config.get('panelbridge') is True)
         state.page = page
         target = directory / f"{page + 1}-{name.lower()}.png"
         render_ui(state, sample).save(target)
@@ -140,7 +267,7 @@ def main(argv: list[str] | None = None) -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--daemon", action="store_true", help="installed nonroot daemon with real actions")
     mode.add_argument("--foreground", action="store_true", help="run on the verified Pi display")
-    mode.add_argument("--preview-dir", type=Path, help="save seven software frames without hardware")
+    mode.add_argument("--preview-dir", type=Path, help="save configured page previews without hardware")
     mode.add_argument("--snapshot", action="store_true", help="print read-only metrics JSON without hardware")
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument("--dry-run-actions", action="store_true", help="log action names only")

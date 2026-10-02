@@ -38,7 +38,9 @@ class AppTests(unittest.TestCase):
     def test_snapshot_and_preview_need_no_hardware(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp)
-            with patch("oled_panel.app.PanelHardware", side_effect=AssertionError("hardware touched")):
+            with patch("oled_panel.app.PanelHardware", side_effect=AssertionError("hardware touched")), \
+                 patch("oled_panel.app.collect_snapshot", return_value={"sampled_at": 1}), \
+                 contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(main(["--preview-dir", str(path), "--dry-run-actions"]), 0)
                 self.assertEqual(len(list(path.glob("*.png"))), 7)
                 self.assertEqual(main(["--snapshot", "--dry-run-actions"]), 0)
@@ -143,6 +145,7 @@ class InstalledAppTests(unittest.TestCase):
         self.assertEqual(panel.frames, 1)
         self.assertIs(signal.getsignal(signal.SIGTERM), old)
 
+
     def test_foreground_action_failure_keeps_rendering_and_closes(self):
         from oled_panel.ui import initial_state, _lines
         panel = type('Panel', (), {'read_keys': lambda self: set(),
@@ -168,3 +171,137 @@ class InstalledAppTests(unittest.TestCase):
         self.assertGreater(len(rendered), 1)
         self.assertTrue(all(view == 'action-error' for view in rendered))
         self.assertTrue(panel.closed)
+
+class MonitorWorkerTests(unittest.TestCase):
+    def test_unread_action_result_prevents_second_queued_command(self):
+        import time
+        from oled_panel.app import MonitorWorker
+        from tests.test_panelbridge_ui import status
+        class Client:
+            def status(self): return status()
+            def command(self, action): pass
+        stop = [False]
+        worker = MonitorWorker(stop, real_actions=True, client_factory=Client)
+        worker.submit('monitor-start', status())
+        worker.start()
+        try:
+            deadline = time.monotonic() + 1
+            while worker.results.empty() and time.monotonic() < deadline:
+                time.sleep(.005)
+            self.assertFalse(worker.results.empty())
+            self.assertFalse(worker.submit('monitor-start', status()))
+            self.assertIsNone(worker.results.get_nowait()['error'])
+        finally:
+            stop[0] = True; worker.thread.join(timeout=2)
+
+    def test_input_loop_keeps_polling_while_controller_status_is_blocked(self):
+        from threading import Event
+        entered, release, completed = Event(), Event(), Event()
+        class Client:
+            def status(self):
+                entered.set(); release.wait(1); completed.set()
+                return {'available': False, 'actions': []}
+        class Panel:
+            calls = 0
+            closed = False
+            def read_keys(self): self.calls += 1; return set()
+            def show(self, frame): pass
+            def close(self): self.closed = True
+        panel = Panel()
+        config = {**load_config(None), 'panelbridge': True}
+        try:
+            with patch('oled_panel.app.PanelBridgeClient', Client), \
+                 patch('oled_panel.app.collect_snapshot', return_value={'sampled_at': 1}):
+                run_foreground(panel, config, seconds=.15)
+            self.assertTrue(entered.is_set())
+            self.assertFalse(completed.is_set())
+            self.assertGreaterEqual(panel.calls, 5)
+            self.assertTrue(panel.closed)
+        finally:
+            release.set(); completed.wait(1)
+
+    def test_disabled_integration_never_constructs_controller(self):
+        panel = type('Panel', (), {'read_keys': lambda self: set(), 'show': lambda self, frame: None,
+                                  'close': lambda self: None})()
+        class NoThread:
+            def __init__(self, **kwargs): pass
+            def start(self): pass
+        with patch('oled_panel.app.Thread', NoThread), \
+             patch('oled_panel.app.PanelBridgeClient', side_effect=AssertionError('controller constructed')):
+            run_foreground(panel, load_config(None), seconds=.001)
+
+    def test_monitor_worker_keeps_slow_status_off_input_thread_and_rejects_duplicate_action(self):
+        from threading import Event, get_ident
+        from oled_panel.app import MonitorWorker
+        from tests.test_panelbridge_ui import status
+        entered, release, commanded = Event(), Event(), Event()
+        caller_thread = get_ident()
+        thread_ids = []
+        class SlowClient:
+            def status(self):
+                thread_ids.append(get_ident()); entered.set(); release.wait(1)
+                return status()
+            def command(self, action):
+                self.action = action; commanded.set()
+        stop = [False]
+        client = SlowClient()
+        worker = MonitorWorker(stop, real_actions=True, client_factory=lambda: client)
+        worker.start()
+        try:
+            self.assertTrue(entered.wait(1))
+            self.assertTrue(worker.submit('monitor-start', status()))
+            self.assertFalse(worker.submit('monitor-start', status()))
+            self.assertFalse(commanded.is_set())
+            release.set()
+            result = worker.results.get(timeout=2)
+            self.assertIsNone(result['error'])
+            self.assertEqual(client.action, 'monitor-start')
+            self.assertTrue(all(identity != caller_thread for identity in thread_ids))
+        finally:
+            stop[0] = True; release.set(); worker.thread.join(timeout=2)
+
+    def test_worker_rechecks_trial_and_capabilities_before_dispatch(self):
+        from oled_panel.app import MonitorWorker
+        from tests.test_panelbridge_ui import status
+        for current in (status('streaming'), status('streaming', actions=[]), status(available=False)):
+            with self.subTest(current=current):
+                class Client:
+                    def status(self): return current
+                    def command(self, action): raise AssertionError('unavailable action dispatched')
+                stop = [False]
+                worker = MonitorWorker(stop, real_actions=True, client_factory=Client)
+                original = status('streaming', trial={'kind': 'profile', 'seconds_remaining': 10})
+                self.assertTrue(worker.submit('monitor-keep', original))
+                worker.start()
+                try:
+                    result = worker.results.get(timeout=2)
+                    self.assertIsNotNone(result['error'])
+                finally:
+                    stop[0] = True; worker.thread.join(timeout=2)
+
+    def test_worker_rejects_trial_for_another_profile_and_dry_run_never_commands(self):
+        from oled_panel.app import MonitorWorker
+        from tests.test_panelbridge_ui import status
+        original = status('streaming', trial={'kind': 'profile', 'seconds_remaining': 10})
+        changed = json.loads(json.dumps(original))
+        changed['profile']['content_fps'] = 30
+        class Client:
+            def status(self): return changed
+            def command(self, action): raise AssertionError('controller commanded')
+        for real_actions in (True, False):
+            stop = [False]
+            worker = MonitorWorker(stop, real_actions=real_actions, client_factory=Client)
+            worker.submit('monitor-keep', original)
+            worker.start()
+            try:
+                self.assertIsNotNone(worker.results.get(timeout=2)['error'])
+            finally:
+                stop[0] = True; worker.thread.join(timeout=2)
+        stop = [False]
+        worker = MonitorWorker(stop, real_actions=False, client_factory=Client)
+        worker.submit('monitor-stop', changed)
+        worker.start()
+        try:
+            self.assertIsNone(worker.results.get(timeout=2)['error'])
+        finally:
+            stop[0] = True; worker.thread.join(timeout=2)

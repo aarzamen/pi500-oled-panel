@@ -125,5 +125,86 @@ class BootTests(unittest.TestCase):
         panel.close = close
         self.assertEqual(boot.choose_boot_mode(self.config, lambda: panel, self.clock), 'desktop')
 
+    def test_integrated_defaults_commit_boot_bound_choice_and_only_console_skips_desktop(self):
+        identity = '11111111-1111-4111-8111-111111111111'
+        for default, mode in [('Wireless', 'wireless'), ('Desktop', 'desktop'), ('Headless', 'headless')]:
+            with self.subTest(default=default), patch('oled_panel.boot.read_boot_id', return_value=identity):
+                self.clock.now = 0
+                self.config.update(panelbridge=True, boot_default=default)
+                self.assertEqual(self.choose(), mode)
+                self.assertEqual(json.loads((self.root / 'choice.json').read_text()),
+                                 {'mode': mode, 'panelbridge': True, 'boot_id': identity})
+                self.assertEqual((self.root / 'headless').exists(), mode == 'headless')
+                self.assertLess(self.clock.now, 10.1)
+
+    def test_integrated_navigation_covers_three_modes_in_both_directions(self):
+        self.config.update(panelbridge=True, boot_default='Desktop')
+        for direction, expected in [('up', 'wireless'), ('down', 'headless')]:
+            with self.subTest(direction=direction), patch('oled_panel.boot.read_boot_id', return_value='11111111-1111-4111-8111-111111111111'):
+                self.clock.now = 0
+                keys = lambda t: {direction} if 3 <= t < 4 else ({'select'} if t >= 5 else set())
+                self.assertEqual(self.choose(keys), expected)
+                self.assertEqual((self.root / 'headless').exists(), expected == 'headless')
+
+    def test_integrated_navigation_deadline_returns_saved_wireless_and_starts_desktop(self):
+        self.config.update(panelbridge=True, boot_default='Wireless')
+        with patch('oled_panel.boot.read_boot_id', return_value='11111111-1111-4111-8111-111111111111'):
+            self.assertEqual(self.choose(lambda t: {'down'} if int(t * 4) % 2 else set()), 'wireless')
+        self.assertGreaterEqual(self.clock.now, 30)
+        self.assertLess(self.clock.now, 30.1)
+        self.assertFalse((self.root / 'headless').exists())
+
+    def test_integrated_failure_never_leaves_a_suppression_choice(self):
+        self.config.update(panelbridge=True, boot_default='Headless')
+        for failure in ('keys', 'render', 'close'):
+            with self.subTest(failure=failure):
+                self.clock.now = 0
+                self.assertEqual(self.choose(fail=failure), 'desktop')
+                self.assertFalse((self.root / 'headless').exists())
+                self.assertFalse((self.root / 'choice.json').exists())
+
+    def test_missing_boot_identity_falls_back_without_suppression_marker(self):
+        self.config.update(panelbridge=True, boot_default='Desktop')
+        with patch('oled_panel.boot.read_boot_id', side_effect=OSError('unavailable')):
+            self.assertEqual(self.choose(), 'desktop')
+        self.assertFalse((self.root / 'choice.json').exists())
+        self.assertFalse((self.root / 'headless').exists())
+
+    def test_standalone_choice_shape_stays_unchanged(self):
+        self.assertEqual(self.choose(), 'desktop')
+        self.assertEqual(json.loads((self.root / 'choice.json').read_text()), {'mode': 'desktop'})
+
+    def test_integration_setting_and_saved_wireless_are_validated_before_hardware(self):
+        for enabled, default in ((False, 'Wireless'), (1, 'Desktop'), ('true', 'Headless')):
+            self.config.update(panelbridge=enabled, boot_default=default)
+            self.assertEqual(boot.choose_boot_mode(self.config, lambda: self.fail('opened'), self.clock), 'desktop')
+            self.assertFalse((self.root / 'choice.json').exists())
+
+    def test_integrated_held_select_still_requires_release(self):
+        self.config.update(panelbridge=True, boot_default='Wireless')
+        with patch('oled_panel.boot.read_boot_id', return_value='11111111-1111-4111-8111-111111111111'):
+            self.assertEqual(self.choose(lambda t: {'select'}), 'wireless')
+        self.assertGreaterEqual(self.clock.now, 10)
+
+    def test_integrated_choice_write_failure_clears_suppression_markers(self):
+        self.config.update(panelbridge=True, boot_default='Headless')
+        with patch('oled_panel.boot.read_boot_id', return_value='11111111-1111-4111-8111-111111111111'), \
+                patch('oled_panel.boot.os.replace', side_effect=OSError('full')):
+            self.assertEqual(self.choose(), 'desktop')
+        self.assertFalse((self.root / 'choice.json').exists())
+        self.assertFalse((self.root / 'headless').exists())
+        self.assertEqual(list(self.root.glob('.*.tmp')), [])
+
+    def test_main_accepts_root_saved_wireless_only_for_enabled_integration(self):
+        for enabled, expected in ((False, 1), (True, 0)):
+            with self.subTest(enabled=enabled), patch('oled_panel.boot.clear_choice'), \
+                    patch('oled_panel.boot.load_config', return_value={'panelbridge': enabled}), \
+                    patch.object(Path, 'read_text', return_value='wireless\n'), \
+                    patch('oled_panel.boot.choose_boot_mode', return_value='wireless') as choose:
+                self.assertEqual(boot.main(['--config', '/fixture/device.json']), expected)
+                self.assertEqual(choose.call_count, int(enabled))
+                if enabled:
+                    self.assertEqual(choose.call_args.args[0]['boot_default'], 'Wireless')
+
 
 if __name__ == '__main__': unittest.main()

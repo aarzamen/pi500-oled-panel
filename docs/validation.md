@@ -27,6 +27,20 @@ has a 32-second start timeout and a separate two-second stop timeout. Generated
 units and sudoers were validated before installation. These tests cover the
 failure paths separately from the physical observations above.
 
+## Development integration
+
+Version `0.1.1.dev1` adds opt-in same-host PanelBridge startup and monitor
+controls. Software tests cover controller validation, stale status, bounded
+command dispatch, boot choices, installation enrollment and restoration.
+The exported development source passed 143 tests on the development Mac.
+Deployment is deferred. No combined OLED/PanelBridge configuration, Pi 5 OLED
+wiring or Jetson adapter has received physical validation. The model checks
+continue to accept only the Raspberry Pi 500. See [integration](panelbridge.md)
+before enabling it.
+
+The v0.1.0 tag and release assets retain the original standalone version and
+the evidence recorded above.
+
 ## Device acceptance checklist
 
 Repeat these checks on your own Pi after following [setup](setup.md):

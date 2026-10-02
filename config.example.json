@@ -8,6 +8,7 @@
   "rotate": 0,
   "display_manager": "lightdm",
   "boot_default": "Desktop",
+  "panelbridge": false,
   "workload": null,
   "power": null
 }

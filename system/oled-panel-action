@@ -13,7 +13,7 @@ CONFIG = Path('/etc/oled-panel/actions.json')
 DEFAULT = Path('/etc/oled-panel/default')
 RUNTIME = Path('/run/oled-panel')
 PUBLIC = {('start-desktop',), ('stop-desktop',), ('reboot',), ('shutdown',),
-          ('set-default', 'desktop'), ('set-default', 'headless')}
+          ('set-default', 'desktop'), ('set-default', 'headless'), ('set-default', 'wireless')}
 
 
 def trusted_config(path):
@@ -89,6 +89,8 @@ def dispatch(args, config, runtime, default, runner=run):
         raise ValueError('invalid installed display-manager unit')
     action = args[0]
     if action == 'set-default':
+        if args[1] == 'wireless' and config.get('panelbridge') is not True:
+            raise ValueError('wireless default requires installed PanelBridge integration')
         save_default(default, args[1])
         return
     command = ['/usr/bin/systemctl', '--no-block']
