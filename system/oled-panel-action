@@ -1,0 +1,127 @@
+#!/usr/bin/python3 -I
+"""Installed root-owned, stdlib-only helper. No project/venv imports."""
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import subprocess
+import sys
+import tempfile
+
+CONFIG = Path('/etc/oled-panel/actions.json')
+DEFAULT = Path('/etc/oled-panel/default')
+RUNTIME = Path('/run/oled-panel')
+PUBLIC = {('start-desktop',), ('stop-desktop',), ('reboot',), ('shutdown',),
+          ('set-default', 'desktop'), ('set-default', 'headless')}
+
+
+def trusted_config(path):
+    for parent in (path, *path.parents):
+        info = parent.lstat()
+        if stat.S_ISLNK(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
+            raise PermissionError(f'unsafe root configuration: {parent}')
+    return json.loads(path.read_text())
+
+
+def clear(runtime, names=('headless', 'choice.json')):
+    try:
+        fd = os.open(runtime, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    except FileNotFoundError:
+        return
+    try:
+        for name in names:
+            try:
+                os.unlink(name, dir_fd=fd)
+            except FileNotFoundError:
+                pass
+    finally:
+        os.close(fd)
+
+
+def cleanup(runtime, service_result):
+    if service_result != 'success':
+        clear(runtime)
+
+
+def save_default(path, value):
+    fd, temporary = tempfile.mkstemp(prefix='.default-', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(value + '\n')
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def run(command):
+    subprocess.run(command, check=True, timeout=10, env={'PATH': '/usr/bin:/usr/sbin', 'LANG': 'C'})
+
+
+def plymouth_running(path):
+    result = subprocess.run([str(path), '--ping'], check=False, timeout=2,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            env={'PATH': '/usr/bin:/usr/sbin', 'LANG': 'C'})
+    if result.returncode not in (0, 1):
+        raise RuntimeError('cannot determine Plymouth state')
+    return result.returncode == 0
+
+
+def finish(runtime, *, plymouth=Path('/usr/bin/plymouth'), runner=run, running=plymouth_running):
+    # LightDM normally quits Plymouth. A condition-skipped LightDM never runs
+    # its OnFailure handler, leaving plymouth --wait and boot targets blocked.
+    if (runtime / 'headless').exists() and plymouth.is_file() and running(plymouth):
+        try:
+            runner([str(plymouth), 'quit'])
+        except subprocess.CalledProcessError:
+            if running(plymouth):
+                raise
+
+
+def dispatch(args, config, runtime, default, runner=run):
+    if tuple(args) not in PUBLIC:
+        raise ValueError('unsupported action or arguments')
+    manager = config.get('display_manager')
+    if not isinstance(manager, str) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.@-]*\.service', manager):
+        raise ValueError('invalid installed display-manager unit')
+    action = args[0]
+    if action == 'set-default':
+        save_default(default, args[1])
+        return
+    command = ['/usr/bin/systemctl', '--no-block']
+    if action == 'start-desktop':
+        clear(runtime, ('headless',))
+        command += ['start', manager]
+    elif action == 'stop-desktop':
+        command += ['stop', manager]
+    else:
+        command += ['reboot' if action == 'reboot' else 'poweroff']
+    runner(command)
+
+
+def main(args=None):
+    args = sys.argv[1:] if args is None else args
+    if os.geteuid() != 0:
+        raise PermissionError('helper requires root')
+    # Internal commands are deliberately absent from sudoers. These are invoked
+    # only by PID 1's root-prefixed unit commands with fixed paths.
+    if args == ['selector-reset']:
+        clear(RUNTIME)
+    elif args == ['selector-finish']:
+        finish(RUNTIME)
+    elif args == ['selector-cleanup']:
+        cleanup(RUNTIME, os.environ.get('SERVICE_RESULT', ''))
+    else:
+        dispatch(args, trusted_config(CONFIG), RUNTIME, DEFAULT)
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        raise SystemExit(main())
+    except Exception as error:
+        print(f'OLED action failed: {error}', file=sys.stderr)
+        raise SystemExit(1)

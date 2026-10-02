@@ -1,0 +1,13 @@
+{
+  "bus": 1,
+  "address": 60,
+  "keys": true,
+  "polarity": "low",
+  "gpiochip": 0,
+  "pins": [17, 27, 22, 23],
+  "rotate": 0,
+  "display_manager": "lightdm",
+  "boot_default": "Desktop",
+  "workload": null,
+  "power": null
+}
