@@ -83,6 +83,11 @@ Exports use millimeters and start at Z=0. Cover and sleeve are flipped face-down
 
 Exports are binary **STL**, in millimeters. **STEP export is not supported** by this polygonal editor.
 
+Live-site ZIP downloads were verified in Chrome. Codex's in-app browser canceled
+the downloads during this review; open the public site in Chrome if saving is
+blocked. A download-request notification means the browser received the request,
+not that a file was saved.
+
 ## Included files
 
 - `oled-case-playground.html`: self-contained interactive app.
