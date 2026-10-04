@@ -12,6 +12,7 @@ const closureNames={snap:'Snap-fit',friction:'Slip-fit',screw:'Screw-fastened'};
 let state={...DEFAULTS}, source='design', requestedRev=0,lastBuiltRev=-1,inFlight=false,timer,valid=false,firstBuild=true;
 let lastParts={},lastWarnings=[],lastBuildMs=0,bodyColor='#b6c7d0';
 let lastGoodState=null,lastGoodPreset='Original footprint',linkedRollback=null;
+let dimensionFeedback=null,lastEditedFields=[];
 const pendingExports=new Map();let exportId=0;
 const STORAGE_KEY='oled-case-workshop-v2';
 let level='easy', startingPreset='Original footprint', baseline={...DEFAULTS};
@@ -49,7 +50,7 @@ for(const [title,open,controls] of groups){
  if(title==='Snap catches')section.id='snap-controls';
  const summary=document.createElement('summary');summary.textContent=title;section.append(summary);
  for(const [key,label,min,max,step] of controls){
-  labels[key]=label;const wrap=document.createElement('div');wrap.className='control';wrap.dataset.key=key;wrap.dataset.level=easyKeys.has(key)?'0':expertKeys.has(key)?'2':'1';
+  labels[key]=label;const wrap=document.createElement('div');wrap.className='control';wrap.id='control-'+key;wrap.dataset.key=key;wrap.dataset.level=easyKeys.has(key)?'0':expertKeys.has(key)?'2':'1';
   if(min==='bool'){
    const l=document.createElement('label');l.className='check';l.htmlFor=key;l.append(document.createTextNode(label));
    const input=document.createElement('input');input.type='checkbox';input.id=key;input.checked=!!state[key];input.onchange=()=>change(key,input.checked);l.append(input);wrap.append(l);
@@ -66,7 +67,7 @@ for(const [title,open,controls] of groups){
    number.onchange=()=>{const n=Number(number.value);if(number.value===''||!Number.isFinite(n)){number.value=state[key];return}range.value=n;change(key,n)};
    number.onblur=()=>{number.value=state[key]};
    wrap.append(head,range);
-  }if(typeof min==='string')wrap.append(makeReset(key));section.append(wrap);
+  }if(typeof min==='string')wrap.append(makeReset(key));const badge=document.createElement('span');badge.className='dimension-badge';badge.hidden=true;wrap.append(badge);section.append(wrap);
  }
  if(title==='Window & button style'){
   const p=document.createElement('p');p.className='help';p.textContent='The ZIP style adds a sloped screen opening and a separate four-key strip. Selecting a button style loads its starting dimensions. ZIP face style applies both source-inspired shapes with spacing adapted to this PCB.';section.append(p);
@@ -97,16 +98,45 @@ function makeReset(key){
 }
 function applyLinked(kind,factor){
  const previous=lastGoodState?{...lastGoodState}:{...state};
- try{const result=applyGlobal(baseline,state,kind,factor);state=result.state;const notes=result.adjustments.map(a=>`${labels[a.key]||a.key}: ${a.to.toFixed(2)} mm`);$('linked-adjustments').textContent=notes.length?'Adjusted for clearance: '+notes.join('; ')+'.':'';$('linked-adjustments').hidden=!notes.length;change('wall',state.wall);linkedRollback={revision:requestedRev,state:previous,preset:lastGoodState?lastGoodPreset:startingPreset}}catch(error){syncControls();$('linked-adjustments').textContent=error.message;$('linked-adjustments').hidden=false;toast(error.message)}
+ try{const result=applyGlobal(baseline,state,kind,factor);state=result.state;change('wall',state.wall);lastEditedFields=['global-'+kind];const notes=result.adjustments.map(a=>`${labels[a.key]||a.key}: ${a.to.toFixed(2)} mm`);const message=notes.length?'Adjusted for clearance: '+notes.join('; ')+'.':'';$('linked-adjustments').textContent=message;$('linked-adjustments').hidden=!notes.length;setDimensionFeedback(result.adjustments.map(a=>a.key),message,'adjusted');linkedRollback={revision:requestedRev,state:previous,preset:lastGoodState?lastGoodPreset:startingPreset}}catch(error){syncControls();setDimensionFeedback(['global-'+kind],error.message,'review');$('linked-adjustments').textContent=error.message;$('linked-adjustments').hidden=false;toast(error.message)}
 }
 function createLinkedControl(kind,title){
- const row=document.createElement('div');row.className='control linked-control';
+ const row=document.createElement('div');row.className='control linked-control';row.id='control-global-'+kind;row.dataset.key='global-'+kind;row.dataset.level='0';labels['global-'+kind]=title;
  row.innerHTML=`<div class="control-head"><label for="global-${kind}">${title}</label><span class="value"><output id="global-${kind}-value">100%</output></span><button class="reset-value" id="reset-global-${kind}" aria-label="Reset ${title}">↺</button></div><input id="global-${kind}" aria-label="${title}" type="range" min="${GLOBAL_RANGES[kind].min*100}" max="${GLOBAL_RANGES[kind].max*100}" step="5" value="100"><p class="help" id="global-${kind}-summary"></p>`;
  row.querySelector('input').oninput=e=>{applyLinked(kind,Number(e.target.value)/100)};
  row.querySelector('button').onclick=()=>{applyLinked(kind,1)};
+ const badge=document.createElement('span');badge.className='dimension-badge';badge.hidden=true;row.append(badge);
  $('linked-controls').append(row);
 }
 createLinkedControl('wall','Wall thickness scale');createLinkedControl('rounding','Edge rounding scale');
+function clearDimensionFeedback(){
+ dimensionFeedback=null;$('dimension-feedback').hidden=true;$('dimension-links').replaceChildren();
+ document.querySelectorAll('.control[data-key]').forEach(row=>{
+  row.classList.remove('dimension-conflict','dimension-adjusted','dimension-review');row.querySelector('.dimension-badge').hidden=true;
+  row.querySelectorAll('input,select').forEach(input=>{input.removeAttribute('aria-invalid');input.removeAttribute('aria-describedby')});
+ });
+ document.querySelectorAll('#controls details').forEach(section=>{section.classList.remove('has-dimension-conflict','has-dimension-adjusted','has-dimension-review');section.querySelector('summary').removeAttribute('title')});
+}
+function setDimensionFeedback(fields,message,kind='conflict'){
+ clearDimensionFeedback();const keys=[...new Set(fields||[])].filter(key=>$('control-'+key));if(!keys.length)return;
+ dimensionFeedback={keys,message,kind};const panel=$('dimension-feedback');panel.hidden=false;panel.dataset.kind=kind;
+ $('dimension-feedback-title').textContent=kind==='adjusted'?'Adjusted for clearance':kind==='review'?'Review recent adjustment':'Check highlighted dimensions';
+ $('dimension-feedback-message').textContent=message;
+ for(const key of keys){
+  const row=$('control-'+key);row.classList.add('dimension-'+kind);const badge=row.querySelector('.dimension-badge');badge.hidden=false;badge.textContent=kind==='adjusted'?'Adjusted automatically':kind==='review'?'Review this change':'Check fit';
+  row.querySelectorAll('input,select').forEach(input=>{input.setAttribute('aria-describedby','dimension-feedback-message');if(kind==='conflict')input.setAttribute('aria-invalid','true')});
+  const section=row.closest('details');if(section){section.classList.add('has-dimension-'+kind);section.querySelector('summary').title='Contains highlighted dimensions';if(!row.hidden&&!section.hidden)section.open=true}
+  const button=document.createElement('button');button.type='button';button.textContent=labels[key];button.dataset.dimensionTarget=key;button.setAttribute('aria-label','Show '+labels[key]);button.onclick=()=>revealDimensions([key]);$('dimension-links').append(button);
+ }
+}
+function revealDimensions(keys){
+ const rows=keys.map(key=>$('control-'+key)).filter(Boolean);if(!rows.length)return;
+ const required=Math.max(levels[level],...rows.map(row=>Number(row.dataset.level)));level=Object.keys(levels).find(name=>levels[name]===required);updateLevel();
+ try{localStorage.setItem('oled-case-workshop-level',level)}catch{}
+ for(const row of rows){const section=row.closest('details');if(section)section.open=true}
+ rows[0].scrollIntoView({block:'center',behavior:'instant'});const input=rows[0].querySelector('input:not(:disabled),select:not(:disabled)');input?.focus({preventScroll:true});
+}
+$('show-related-dimensions').onclick=()=>{if(dimensionFeedback)revealDimensions(dimensionFeedback.keys)};
 function updateLevel(){
  document.querySelectorAll('[data-level-button]').forEach(b=>{const active=b.dataset.levelButton===level;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
  $('level-description').textContent=levelDescriptions[level];
@@ -136,12 +166,12 @@ function syncControls(){
  $('clearance-label').textContent=`${Number(state.fit).toFixed(2)} mm clearance per side`;
  updateLevel();
 }
-function change(key,value){linkedRollback=null;state[key]=value;source='design';document.querySelectorAll('[data-source]').forEach(b=>b.classList.toggle('active',b.dataset.source===source));syncControls();scheduleBuild();updatePrompt()}
+function change(key,value){linkedRollback=null;state[key]=value;source='design';document.querySelectorAll('[data-source]').forEach(b=>b.classList.toggle('active',b.dataset.source===source));syncControls();scheduleBuild([key]);updatePrompt()}
 PRESETS.forEach((preset,i)=>{const b=document.createElement('button');b.textContent=preset.name;b.title=preset.description;b.dataset.preset=String(i);b.onclick=()=>{selectBaseline(preset.name);state={...baseline};$('linked-adjustments').hidden=true;for(const part of ['front','bezel','back','buttons'])$('show-'+part).checked=true;source='design';syncControls();scheduleBuild();updatePrompt();toast(preset.name)};$('presets').append(b)});
 $('reset').onclick=()=>{state={...baseline};$('linked-adjustments').hidden=true;for(const part of ['front','bezel','back','buttons'])$('show-'+part).checked=true;source='design';syncControls();scheduleBuild();updatePrompt();toast(startingPreset+' restored')};
 function setStatus(message,type=''){ $('status').className='status '+type;$('status-text').textContent=message;}
 function setExportEnabled(value){valid=value;value=value&&source==='design';['export-front','export-back','download-set'].forEach(id=>$(id).disabled=!value);$('export-bezel').disabled=!value||!state.bezelOn;$('export-buttons').disabled=!value||state.buttonStyle!=='strip'}
-function scheduleBuild(){requestedRev++;setExportEnabled(false);setStatus('Updating solids…','busy');clearTimeout(timer);timer=setTimeout(kickBuild,110)}
+function scheduleBuild(editedFields=[]){lastEditedFields=editedFields;clearDimensionFeedback();$('linked-adjustments').hidden=true;requestedRev++;setExportEnabled(false);setStatus('Updating solids…','busy');clearTimeout(timer);timer=setTimeout(kickBuild,110)}
 const workerURL=URL.createObjectURL(new Blob([$('geometry-worker').textContent],{type:'application/javascript'}));
 const worker=new Worker(workerURL);URL.revokeObjectURL(workerURL);
 function kickBuild(){if(inFlight)return;inFlight=true;worker.postMessage({type:'build',state,revision:requestedRev})}
@@ -157,7 +187,7 @@ worker.onmessage=({data})=>{
   if(data.request){const p=pendingExports.get(data.request);if(p){p.reject(Error(data.message));pendingExports.delete(data.request)}return}
   inFlight=false;if(data.revision!==requestedRev){kickBuild();return}
   if(linkedRollback?.revision===data.revision){const previous=linkedRollback.state;selectBaseline(linkedRollback.preset);linkedRollback=null;state=previous;syncControls();scheduleBuild();updatePrompt();$('linked-adjustments').textContent='That combination could not be built safely. Your previous design was restored. Try a nearby scale or adjust individual parts in Intermediate.';$('linked-adjustments').hidden=false;toast('Previous design restored; try a different scale.');return}
-  setExportEnabled(false);setStatus(data.message,'error');$('warnings').textContent='Showing the last valid shape. Correct the settings above to export.';
+  setExportEnabled(false);setStatus(data.message,'error');setDimensionFeedback(data.fields?.length?data.fields:lastEditedFields,data.message,data.fields?.length?'conflict':'review');$('warnings').textContent='Showing the last valid shape. Correct the settings above to export.';
  }else if(data.type==='exported'){
   const p=pendingExports.get(data.request);if(p){p.resolve(data.parts);pendingExports.delete(data.request)}
  }

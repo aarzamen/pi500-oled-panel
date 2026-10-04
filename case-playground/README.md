@@ -17,6 +17,13 @@ Changing levels preserves the design. Every dimensional slider has a visible
 **↺** reset. It restores that field to the selected starting preset, shown above
 Whole-case adjustments. **Reset all** restores the complete selected preset;
 choose **Original footprint** to return to the original starting design.
+When dimensions conflict, the related sliders and numeric fields are highlighted
+in amber with **Check fit** labels. The message lists clickable dimension names;
+**Show related controls** opens the required level and sections. Blue highlights
+identify values adjusted automatically for clearance. Highlights clear on the
+next edit and reappear only if the new design still needs attention. Unknown
+meshing errors identify the recent edit without claiming a specific cause.
+
 Settings files now retain the starting preset. Older files use Original footprint
 as their reset baseline. There is also a reset for exploded-view separation.
 

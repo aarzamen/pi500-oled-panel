@@ -14,6 +14,9 @@ style choices. **Intermediate** exposes individual part sizes and PCB mounts.
 Switching levels preserves the model. Each ↺ resets one field to the selected
 starting preset; Reset all restores that entire preset. Linked adjustments can
 enlarge the shell to preserve clearance, and report those changes beside the sliders.
+Conflicting dimensions are highlighted in amber; automatic adjustments are blue.
+Select a dimension name in the message, or **Show related controls**, to reveal
+the matching sidebar sliders, including controls hidden by the current level.
 
 **Original STL** displays the exact supplied front and bezel. **ZIP reference**
 shows all five supplied ZIP meshes individually. Use **ZIP face style** for the

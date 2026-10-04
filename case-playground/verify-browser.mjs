@@ -34,6 +34,22 @@ assert.deepEqual(await page.evaluate(()=>caseWorkshop.getState()),roundedBaselin
 assert.equal(await page.locator('#baseline-name').textContent(),'Rounded');
 await original();
 assert.equal(await page.locator('#cableWidth').count(),0);
+// Conflict messages lead to the exact editable fields, even from Easy mode.
+await page.locator('#pcbHoleDiameter').fill('3');await page.locator('#pcbHoleDiameter').press('Tab');
+await page.locator('#status.error').waitFor();
+assert.equal(await page.locator('#pcbPostDiameter').getAttribute('aria-invalid'),'true');
+assert.equal(await page.locator('#pcbHoleDiameter-range').getAttribute('aria-invalid'),'true');
+assert.deepEqual(await page.locator('.dimension-conflict').evaluateAll(rows=>rows.map(row=>row.dataset.key)),['pcbPostDiameter','pcbHoleDiameter']);
+await page.getByRole('button',{name:'Easy',exact:true}).click();
+assert(!(await page.locator('#pcbHoleDiameter').isVisible()));
+await page.getByRole('button',{name:'Show related controls',exact:true}).click();
+assert.equal(await page.getByRole('button',{name:'Intermediate',exact:true}).getAttribute('aria-pressed'),'true');
+assert(await page.locator('#pcbHoleDiameter').isVisible());
+await page.getByRole('button',{name:'Reset Screw-hole diameter',exact:true}).click();await ready();
+assert.equal(await page.locator('.dimension-conflict').count(),0);
+assert(!(await page.locator('#dimension-feedback').isVisible()));
+assert.equal(await page.locator('#pcbHoleDiameter').getAttribute('aria-invalid'),null);
+await page.getByRole('button',{name:'Expert',exact:true}).click();
 await number('pcbPostDiameter',3.8);await number('pcbHoleDiameter',1.7);
 assert.equal(await page.evaluate(()=>caseWorkshop.getState().pcbPostDiameter),3.8);
 await page.locator('#inspect-mounts').click();await page.screenshot({path:'artifacts/mount-controls.png'});

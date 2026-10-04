@@ -19,5 +19,5 @@ self.onmessage=({data})=>{
    for(const name of data.parts){if(current.parts[name]){const solid = name === 'front' ? current.parts[name] : modeling.transforms.rotateX(Math.PI, current.parts[name]);const bytes=stl(solid);result[name]=bytes;transfers.push(bytes.buffer);}}
    self.postMessage({type:'exported',request:data.request,parts:result},transfers);
   }
- }catch(error){self.postMessage({type:'error',revision:data.revision,request:data.request,message:error.message||String(error)});}
+ }catch(error){self.postMessage({type:'error',revision:data.revision,request:data.request,message:error.message||String(error),fields:Array.isArray(error.fields)?error.fields:[]});}
 };

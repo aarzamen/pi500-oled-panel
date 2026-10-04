@@ -6,7 +6,7 @@ const names=[
   '.gitignore','README.md','LICENSE','THIRD-PARTY-NOTICES.txt',
   'package.json','package-lock.json','build.mjs','package-workshop.mjs',
   'app.js','geometry.js','linked-controls.js','worker.js','template.html',
-  'test-geometry.mjs','test-linked-controls.mjs','verify-browser.mjs',
+  'test-geometry.mjs','test-linked-controls.mjs','test-dimension-feedback.mjs','verify-browser.mjs',
   'extract-zip-reference.py','oled-case-playground.html',
   'starter-snap-print-set.zip','starter-zip-face-print-set.zip',
   'reference/screeen1.stl','reference/source-meshes.json',

@@ -74,66 +74,72 @@ function ventRows(s) {
   return [-6,-3,0,3,6].filter(y=>Math.abs(s.rearOpeningX)>=(s.rearOpeningWidth+width)/2+1 || Math.abs(s.rearOpeningY-y)>=(s.rearOpeningHeight+1.2)/2+1);
 }
 function validate(s) {
-  const fail=(condition,message)=>{if(condition)throw new Error(message);};
-  fail(s.corner>=Math.min(s.width,s.height)/2-1,'Reduce the body corner radius or enlarge the body.');
-  fail(s.edge>=s.face-.25 || s.edge>=s.wall-.25,'Edge easing needs at least 0.25 mm of face and wall behind it. Reduce edge easing.');
-  fail(s.coverEdge>=s.coverWall-.25 || s.coverEdge>=s.coverDepth-.5,'Reduce cover edge easing or increase the cover wall.');
-  fail(s.depth<=s.face+1,'Increase body depth above face thickness plus 1 mm.');
-  fail(s.lip>=s.depth-s.face-.5,'Registration lip reaches the front face. Reduce lip engagement or increase body depth.');
-  fail(s.coverDepth<=s.coverWall+1,'Increase cover depth or reduce its wall thickness.');
-  fail(s.screenRadius>=Math.min(s.screenW,s.screenH)/2,'Reduce screen corner radius below half its smaller dimension.');
-  fail(s.buttonRadius>=Math.min(s.buttonW,s.buttonH)/2,'Reduce button corner radius below half the button height/width.');
+  // Explicit control keys keep feedback stable when its human wording changes.
+  // Unknown solid/triangulation errors intentionally have no field diagnosis.
+  const fail=(condition,message,fields)=>{if(condition)throw Object.assign(new Error(message),{fields:[...new Set(fields)]});};
+  const bodyFields=['width','height','wall','corner'];
+  const screenFields=['screenW','screenH','screenX','screenY',...(s.screenRaise>0?['screenBezel','screenRaise']:[]),...(s.screenStyle==='beveled'?['screenChamfer']:[])];
+  const buttonFields=['buttonW','buttonH','buttonX','buttonY','buttonPitch',...(s.buttonStyle==='flexure'?['buttonGap']:[])];
+  const rearFields=['rearOpeningX','rearOpeningY','rearOpeningWidth','rearOpeningHeight'];
+  fail(s.corner>=Math.min(s.width,s.height)/2-1,'Reduce the body corner radius or enlarge the body.',['corner','width','height']);
+  fail(s.edge>=s.face-.25 || s.edge>=s.wall-.25,'Edge easing needs at least 0.25 mm of face and wall behind it. Reduce edge easing.',['edge','face','wall']);
+  fail(s.coverEdge>=s.coverWall-.25 || s.coverEdge>=s.coverDepth-.5,'Reduce cover edge easing or increase the cover wall.',['coverEdge','coverWall','coverDepth']);
+  fail(s.depth<=s.face+1,'Increase body depth above face thickness plus 1 mm.',['depth','face']);
+  fail(s.lip>=s.depth-s.face-.5,'Registration lip reaches the front face. Reduce lip engagement or increase body depth.',['lip','depth','face']);
+  fail(s.coverDepth<=s.coverWall+1,'Increase cover depth or reduce its wall thickness.',['coverDepth','coverWall']);
+  fail(s.screenRadius>=Math.min(s.screenW,s.screenH)/2,'Reduce screen corner radius below half its smaller dimension.',['screenRadius','screenW','screenH']);
+  fail(s.buttonRadius>=Math.min(s.buttonW,s.buttonH)/2,'Reduce button corner radius below half the button height/width.',['buttonRadius','buttonW','buttonH']);
   if(s.screenStyle==='beveled') {
-    fail(s.screenRadius<.05,'Beveled screens need a nonzero corner radius. Increase screen corner radius to at least 0.05 mm.');
-    fail(s.screenChamfer>s.face+s.screenRaise+1e-6,'Screen bevel is deeper than the face. Reduce bevel width or increase face thickness.');
-    fail(s.screenRaise>0 && s.screenBezel<s.screenChamfer+.35,'A raised beveled rim needs rim width at least bevel + 0.35 mm. Increase rim width or set screen raise to zero.');
+    fail(s.screenRadius<.05,'Beveled screens need a nonzero corner radius. Increase screen corner radius to at least 0.05 mm.',['screenRadius']);
+    fail(s.screenChamfer>s.face+s.screenRaise+1e-6,'Screen bevel is deeper than the face. Reduce bevel width or increase face thickness.',['screenChamfer','face','screenRaise']);
+    fail(s.screenRaise>0 && s.screenBezel<s.screenChamfer+.35,'A raised beveled rim needs rim width at least bevel + 0.35 mm. Increase rim width or set screen raise to zero.',['screenBezel','screenChamfer','screenRaise']);
   }
-  if(s.buttonStyle==='flexure')fail(s.buttonPitch<s.buttonH+2*s.buttonGap+.45,'Button slots overlap or leave a weak web. Increase button pitch or reduce button height/gap.');
+  if(s.buttonStyle==='flexure')fail(s.buttonPitch<s.buttonH+2*s.buttonGap+.45,'Button slots overlap or leave a weak web. Increase button pitch or reduce button height/gap.',['buttonPitch','buttonH','buttonGap']);
   else {
-    fail(s.buttonRadius<.05,'Separate button openings need a nonzero corner radius. Increase button radius.');
-    fail(s.buttonPitch<s.buttonH+2.5,'Button retaining flanges overlap. Increase button pitch or reduce button height.');
-    fail(Math.min(s.buttonW,s.buttonH)-2*s.buttonGap<.8,'Button clearance leaves stems thinner than 0.8 mm. Reduce clearance or enlarge the buttons.');
+    fail(s.buttonRadius<.05,'Separate button openings need a nonzero corner radius. Increase button radius.',['buttonRadius']);
+    fail(s.buttonPitch<s.buttonH+2.5,'Button retaining flanges overlap. Increase button pitch or reduce button height.',['buttonPitch','buttonH']);
+    fail(Math.min(s.buttonW,s.buttonH)-2*s.buttonGap<.8,'Button clearance leaves stems thinner than 0.8 mm. Reduce clearance or enlarge the buttons.',['buttonGap','buttonW','buttonH']);
   }
   const screenExtra=Math.max(s.screenRaise>0?s.screenBezel:0,s.screenStyle==='beveled'?s.screenChamfer:0);
   const rectangles=[[s.screenX,s.screenY,s.screenW+2*screenExtra,s.screenH+2*screenExtra,'Screen']];
   const buttonExtra=s.buttonStyle==='strip'?1.2:2*s.buttonGap;
   for(let i=0;i<4;i++)rectangles.push([s.buttonX,s.buttonY-i*s.buttonPitch,s.buttonW+buttonExtra,s.buttonH+buttonExtra,'Button']);
   const flangeRectangles=s.buttonStyle==='strip'?Array.from({length:4},(_,i)=>[s.buttonX,s.buttonY-i*s.buttonPitch,s.buttonW+2.2,s.buttonH+2.2]):[];
-  for(const [x,y,w,h] of flangeRectangles)for(const dx of [-w/2,w/2])for(const dy of [-h/2,h/2])fail(!inside(x+dx,y+dy,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),.2),'Button retaining flanges meet a body wall. Move/reduce the buttons or enlarge the body.');
+  for(const [x,y,w,h] of flangeRectangles)for(const dx of [-w/2,w/2])for(const dy of [-h/2,h/2])fail(!inside(x+dx,y+dy,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),.2),'Button retaining flanges meet a body wall. Move/reduce the buttons or enlarge the body.',[...buttonFields,...bodyFields]);
   for(const [x,y,w,h,label] of rectangles) {
-    for(const dx of [-w/2,w/2])for(const dy of [-h/2,h/2])fail(!inside(x+dx,y+dy,s.width/2,s.height/2,s.corner,s.wall+.3),`${label} is too close to a wall. Enlarge the body or move/reduce that feature.`);
+    for(const dx of [-w/2,w/2])for(const dy of [-h/2,h/2])fail(!inside(x+dx,y+dy,s.width/2,s.height/2,s.corner,s.wall+.3),`${label} is too close to a wall. Enlarge the body or move/reduce that feature.`,[...(label==='Screen'?screenFields:buttonFields),...bodyFields]);
   }
   const [sx,sy,sw,sh]=rectangles[0];
-  for(const [x,y,w,h] of rectangles.slice(1))fail(Math.abs(x-sx)<(w+sw)/2+.45 && Math.abs(y-sy)<(h+sh)/2+.45,'Screen rim overlaps a button flexure. Move them apart or reduce the rim.');
+  for(const [x,y,w,h] of rectangles.slice(1))fail(Math.abs(x-sx)<(w+sw)/2+.45 && Math.abs(y-sy)<(h+sh)/2+.45,'Screen rim overlaps a button flexure. Move them apart or reduce the rim.',[...screenFields,...buttonFields]);
   if(s.pcbMounts) {
-    fail(s.pcbPostDiameter-s.pcbHoleDiameter<1.6-1e-6,'PCB screw holes leave less than 0.8 mm of post wall. Increase post diameter or reduce hole diameter.');
-    fail(s.depth+1e-6<s.face+4.6+s.lip+.1,'The provisional PCB stack intersects the registration lip. Set body depth to at least face + 4.6 mm + lip + 0.1 mm, reduce lip engagement, or disable PCB mounts.');
-    for(const x of [-22.5,22.5])for(const y of [-14,14])fail(!inside(x,y,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),.1),'The provisional 45 × 28 mm PCB intersects the body walls. Enlarge the body or reduce wall thickness.');
+    fail(s.pcbPostDiameter-s.pcbHoleDiameter<1.6-1e-6,'PCB screw holes leave less than 0.8 mm of post wall. Increase post diameter or reduce hole diameter.',['pcbPostDiameter','pcbHoleDiameter']);
+    fail(s.depth+1e-6<s.face+4.6+s.lip+.1,'The provisional PCB stack intersects the registration lip. Set body depth to at least face + 4.6 mm + lip + 0.1 mm, reduce lip engagement, or disable PCB mounts.',['depth','face','lip','pcbMounts']);
+    for(const x of [-22.5,22.5])for(const y of [-14,14])fail(!inside(x,y,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),.1),'The provisional 45 × 28 mm PCB intersects the body walls. Enlarge the body or reduce wall thickness.',bodyFields);
     for(const x of [-20,20])for(const y of [-11.5,11.5]) {
-      fail(!inside(x,y,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),s.pcbPostDiameter/2+.1),'Measured PCB bosses do not fit this body. Enlarge it or disable PCB mounts.');
-      fail(nearRectangle(x,y,s.screenX,s.screenY,s.screenW,s.screenH)<s.pcbPostDiameter/2+.05,'Screen opening intersects a measured PCB boss. Move/reduce screen or disable mounts.');
-      for(const [bx,by,bw,bh] of (s.buttonStyle==='strip'?flangeRectangles:rectangles.slice(1)))fail(nearRectangle(x,y,bx,by,bw,bh)<s.pcbPostDiameter/2+.05,'Button slots or retaining flanges intersect a PCB post. Move/reduce buttons, reduce post diameter, or disable mounts.');
+      fail(!inside(x,y,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),s.pcbPostDiameter/2+.1),'Measured PCB bosses do not fit this body. Enlarge it or disable PCB mounts.',[...bodyFields,'pcbPostDiameter','pcbMounts']);
+      fail(nearRectangle(x,y,s.screenX,s.screenY,s.screenW,s.screenH)<s.pcbPostDiameter/2+.05,'Screen opening intersects a measured PCB boss. Move/reduce screen or disable mounts.',['screenX','screenY','screenW','screenH','pcbPostDiameter','pcbMounts']);
+      for(const [bx,by,bw,bh] of (s.buttonStyle==='strip'?flangeRectangles:rectangles.slice(1)))fail(nearRectangle(x,y,bx,by,bw,bh)<s.pcbPostDiameter/2+.05,'Button slots or retaining flanges intersect a PCB post. Move/reduce buttons, reduce post diameter, or disable mounts.',[...buttonFields,'pcbPostDiameter','pcbMounts']);
     }
   }
-  fail(s.rearOpeningRadius>=Math.min(s.rearOpeningWidth,s.rearOpeningHeight)/2,'Reduce rear opening corner radius below half its smaller dimension.');
+  fail(s.rearOpeningRadius>=Math.min(s.rearOpeningWidth,s.rearOpeningHeight)/2,'Reduce rear opening corner radius below half its smaller dimension.',['rearOpeningRadius','rearOpeningWidth','rearOpeningHeight']);
   for(const dx of [-s.rearOpeningWidth/2,s.rearOpeningWidth/2])for(const dy of [-s.rearOpeningHeight/2,s.rearOpeningHeight/2]) {
     const x=s.rearOpeningX+dx,y=s.rearOpeningY+dy;
-    fail(!inside(x,y,s.width/2,s.height/2,s.corner,s.coverWall+.35),'Rear opening removes the cover perimeter. Move or reduce the opening, enlarge the body, or reduce cover wall thickness.');
-    fail(!inside(x,y,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),.15),'The straight rear connector path meets the front shell wall. Move or reduce the rear opening, or enlarge the body.');
+    fail(!inside(x,y,s.width/2,s.height/2,s.corner,s.coverWall+.35),'Rear opening removes the cover perimeter. Move or reduce the opening, enlarge the body, or reduce cover wall thickness.',[...rearFields,'width','height','corner','coverWall']);
+    fail(!inside(x,y,s.width/2-s.wall,s.height/2-s.wall,Math.max(0,s.corner-s.wall),.15),'The straight rear connector path meets the front shell wall. Move or reduce the rear opening, or enlarge the body.',[...rearFields,...bodyFields]);
   }
-  if(s.vents)fail(ventRows(s).length===0,'The rear opening leaves no separate vent rows with a 1 mm web. Reduce or move the opening, or disable vents.');
-  fail(s.bezelOn && s.bezelWidth<s.fit+.7,'Sleeve wall is too thin for this fit clearance. Increase bezel width.');
-  fail(s.bezelOn && s.bezelRadius>s.corner+s.bezelWidth-.35,'Sleeve corner radius removes its inner corner wall. Reduce bezel corner radius or increase bezel width.');
+  if(s.vents)fail(ventRows(s).length===0,'The rear opening leaves no separate vent rows with a 1 mm web. Reduce or move the opening, or disable vents.',[...rearFields,'vents']);
+  fail(s.bezelOn && s.bezelWidth<s.fit+.7,'Sleeve wall is too thin for this fit clearance. Increase bezel width.',['bezelWidth','fit']);
+  fail(s.bezelOn && s.bezelRadius>s.corner+s.bezelWidth-.35,'Sleeve corner radius removes its inner corner wall. Reduce bezel corner radius or increase bezel width.',['bezelRadius','corner','bezelWidth']);
   if(s.closure==='snap') {
-    fail(s.wall<1.25,'Snap relief channels require body walls of at least 1.25 mm. Increase wall thickness.');
-    fail(s.pcbMounts && s.width/2-s.wall-s.fit-s.tabThickness+.45<22.7,'Snap arms encroach on the approximate 45 mm PCB width. Enlarge the body or reduce snap thickness.');
-    fail(s.depth<s.face+2.7,'Snap catches need body depth of at least face + 2.7 mm.');
-    fail(s.hook>s.wall-.85,'Snap hook exceeds the body catch depth. Reduce the hook or increase wall thickness.');
-    fail(s.tabWidth>s.height-2*s.wall-2*s.corner-2,'Snap arms are too wide for the side wall. Reduce tab width.');
+    fail(s.wall<1.25,'Snap relief channels require body walls of at least 1.25 mm. Increase wall thickness.',['wall']);
+    fail(s.pcbMounts && s.width/2-s.wall-s.fit-s.tabThickness+.45<22.7,'Snap arms encroach on the approximate 45 mm PCB width. Enlarge the body or reduce snap thickness.',['width','wall','fit','tabThickness','pcbMounts']);
+    fail(s.depth<s.face+2.7,'Snap catches need body depth of at least face + 2.7 mm.',['depth','face']);
+    fail(s.hook>s.wall-.85,'Snap hook exceeds the body catch depth. Reduce the hook or increase wall thickness.',['hook','wall']);
+    fail(s.tabWidth>s.height-2*s.wall-2*s.corner-2,'Snap arms are too wide for the side wall. Reduce tab width.',['tabWidth','height','wall','corner']);
     const armOuter=s.width/2-s.wall-s.fit+.45, armCenter=armOuter-s.tabThickness/2;
     for(const sign of [-1,1]) {
-      fail(Math.abs(s.rearOpeningX-sign*armCenter)<(s.rearOpeningWidth+s.tabThickness)/2+.8 && Math.abs(s.rearOpeningY)<(s.rearOpeningHeight+s.tabWidth)/2+.8,'Rear opening weakens a snap-arm anchor. Move or reduce the opening, or choose another closure.');
-      if(s.pcbMounts)for(const y of [-11.5,11.5])fail(nearRectangle(sign*20,y,sign*armCenter,0,s.tabThickness,s.tabWidth)<s.pcbPostDiameter/2+.15,'Snap arms intersect the PCB posts. Reduce post diameter or tab width, or enlarge the case.');
+      fail(Math.abs(s.rearOpeningX-sign*armCenter)<(s.rearOpeningWidth+s.tabThickness)/2+.8 && Math.abs(s.rearOpeningY)<(s.rearOpeningHeight+s.tabWidth)/2+.8,'Rear opening weakens a snap-arm anchor. Move or reduce the opening, or choose another closure.',[...rearFields,'tabWidth','tabThickness','width','wall','fit','closure']);
+      if(s.pcbMounts)for(const y of [-11.5,11.5])fail(nearRectangle(sign*20,y,sign*armCenter,0,s.tabThickness,s.tabWidth)<s.pcbPostDiameter/2+.15,'Snap arms intersect the PCB posts. Reduce post diameter or tab width, or enlarge the case.',['pcbPostDiameter','tabWidth','tabThickness','width','wall','fit']);
     }
   }
 }

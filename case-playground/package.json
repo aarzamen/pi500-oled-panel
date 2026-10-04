@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node test-geometry.mjs && node test-linked-controls.mjs",
+    "test": "node test-geometry.mjs && node test-linked-controls.mjs && node test-dimension-feedback.mjs",
     "package": "npm run build && node package-workshop.mjs"
   },
   "dependencies": {
