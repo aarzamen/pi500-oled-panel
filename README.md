@@ -35,6 +35,24 @@ Use a source checkout or source archive for deployment: the wheel contains the
 Python application and artwork; the source distribution also includes the
 installer, configuration example, tests, and these guides.
 
+## 3D print screen case maker
+
+**[Open OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site)** to design a printable enclosure for the
+HW-937AB OLED module directly in the browser.
+
+- Resize the shell, back cover, bezels, rounded edges, and screen/button openings.
+- Adjust PCB standoff outside diameter and screw-hole diameter independently.
+- Position a rear opening for straight DuPont connectors.
+- Choose snap-fit, slip-fit, or screw-fastened covers, plus integral tabs or a
+  separate rounded button strip.
+- Export separate STL files and save or reload the design settings.
+
+See the [case-making guide](docs/case-workshop.md),
+[workshop source and offline app](case-playground/README.md), and
+[downloadable workshop package](case-playground/oled-case-workshop.zip).
+The generated cases need physical fit and button-travel checks; software mesh
+validation does not establish a successful print or hardware fit.
+
 ## Wiring
 
 Shut down and disconnect power before connecting or removing wires. Check the
@@ -132,4 +150,7 @@ addresses; review that output before sharing it.
 
 ## License
 
-[MIT](LICENSE), copyright 2026 Aaron Arzamendi.
+[MIT](LICENSE), copyright 2026 Aaron Arzamendi, for project source code.
+Embedded libraries retain their [notices](case-playground/THIRD-PARTY-NOTICES.txt).
+Supplied reference meshes retain their separate, currently unverified provenance;
+the project license does not grant a license to those reference assets.

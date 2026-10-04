@@ -1,0 +1,12 @@
+import {build} from 'esbuild';
+import {readFile,writeFile} from 'node:fs/promises';
+import {DEFAULTS,PRESETS} from './geometry.js';
+const app=await build({entryPoints:['app.js'],bundle:true,write:false,minify:true,format:'iife',target:'es2022',legalComments:'inline'});
+const worker=await build({entryPoints:['worker.js'],bundle:true,write:false,minify:true,format:'iife',target:'es2022',legalComments:'inline'});
+const notices=(await readFile('THIRD-PARTY-NOTICES.txt','utf8')).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const reference=await readFile('reference/source-meshes.json','utf8');
+let template=await readFile('template.html','utf8');
+const safe=s=>s.replace(/<\/script/gi,'<\\/script');
+template=template.replace('__NOTICES__',()=>notices).replace('__CONFIG__',()=>safe(JSON.stringify({defaults:DEFAULTS,presets:PRESETS}))).replace('__REFERENCE__',()=>reference).replace('__WORKER__',()=>safe(worker.outputFiles[0].text)).replace('__APP__',()=>safe(app.outputFiles[0].text));
+await writeFile('oled-case-playground.html',template);
+console.log('Built self-contained playground:',Buffer.byteLength(template),'bytes');
