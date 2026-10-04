@@ -1,1 +1,19 @@
-{"name":"oled-case-playground","version":"0.1.0","private":true,"type":"module","scripts":{"build":"node build.mjs","test":"node test-geometry.mjs"},"dependencies":{"@jscad/modeling":"2.13.0","@jscad/stl-serializer":"2.1.23","esbuild":"0.28.2","fflate":"0.8.3","playwright":"1.63.0","three":"0.186.1"}}
+{
+  "name": "oled-case-playground",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test-geometry.mjs && node test-linked-controls.mjs",
+    "package": "npm run build && node package-workshop.mjs"
+  },
+  "dependencies": {
+    "@jscad/modeling": "2.13.0",
+    "@jscad/stl-serializer": "2.1.23",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "playwright": "1.63.0",
+    "three": "0.186.1"
+  }
+}

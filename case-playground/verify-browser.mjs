@@ -9,7 +9,30 @@ const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(
 const url=new URL('./oled-case-playground.html',import.meta.url).href;
 const ready=()=>page.waitForFunction(()=>window.caseWorkshop?.getStatus().valid&&caseWorkshop.getStatus().requestedRev===caseWorkshop.getStatus().lastBuiltRev);
 await page.goto(url);await ready();
-const number=async(key,value)=>{await page.locator('#'+key).fill(String(value));await page.locator('#'+key).press('Tab');await ready()};
+const choosePreset=async name=>{await page.getByRole('button',{name,exact:true}).click();await ready()};
+const original=()=>choosePreset('Original footprint');
+const reveal=async key=>{const section=page.locator('#'+key).locator('xpath=ancestor::details[1]');if(await section.count()&&(await section.getAttribute('open'))===null)await section.locator(':scope > summary').click()};
+const number=async(key,value)=>{await reveal(key);await page.locator('#'+key).fill(String(value));await page.locator('#'+key).press('Tab');await ready()};
+assert.equal(await page.locator('[data-level-button="easy"]').getAttribute('aria-pressed'),'true');
+assert(!(await page.locator('#width').isVisible()));
+assert(await page.locator('#global-wall').isVisible());
+await page.locator('[data-level-button="expert"]').click();
+await choosePreset('Rounded');
+const roundedBaseline=await page.evaluate(()=>caseWorkshop.getState());
+await number('width',60);await number('coverDepth',10);
+const changed=await page.evaluate(()=>caseWorkshop.getState());
+for(const tier of ['easy','intermediate','expert']){
+ await page.locator(`[data-level-button="${tier}"]`).click();
+ assert.deepEqual(await page.evaluate(()=>caseWorkshop.getState()),changed,'changing tier preserves all parameters');
+ assert.equal(await page.locator('[data-level-button="'+tier+'"]').getAttribute('aria-pressed'),'true');
+}
+await page.locator('[data-reset="coverDepth"]').click();await ready();
+assert.equal(await page.evaluate(()=>caseWorkshop.getState().coverDepth),roundedBaseline.coverDepth);
+assert.equal(await page.evaluate(()=>caseWorkshop.getState().width),60,'field reset preserves unrelated edits');
+await page.locator('#reset').click();await ready();
+assert.deepEqual(await page.evaluate(()=>caseWorkshop.getState()),roundedBaseline,'Reset all restores selected preset');
+assert.equal(await page.locator('#baseline-name').textContent(),'Rounded');
+await original();
 assert.equal(await page.locator('#cableWidth').count(),0);
 await number('pcbPostDiameter',3.8);await number('pcbHoleDiameter',1.7);
 assert.equal(await page.evaluate(()=>caseWorkshop.getState().pcbPostDiameter),3.8);
@@ -18,7 +41,7 @@ assert(await page.locator('#show-front').isChecked());assert(!(await page.locato
 await number('rearOpeningWidth',26);await number('rearOpeningHeight',6);await number('rearOpeningX',1);await number('rearOpeningY',9.5);await number('rearOpeningRadius',1);
 await page.locator('#inspect-rear').click();await page.screenshot({path:'artifacts/rear-opening.png'});
 assert(await page.locator('#show-back').isChecked());
-await page.locator('#reset').click();await ready();
+await original();
 for(const part of ['front','bezel','back','buttons'])await page.locator('#show-'+part).check();
 await page.locator('#layout-mode').selectOption('exploded');await page.locator('[data-camera="perspective"]').click();
 await page.screenshot({path:'artifacts/desktop.png'});
@@ -28,8 +51,12 @@ for(const name of ['Rounded','Slim slip fit','Screw cover']){
  const bytes=await page.evaluate(async()=>Object.fromEntries(Object.entries(await caseWorkshop.exportParts(['front','bezel','back'])).map(([k,v])=>[k,Array.from(v)])));
  for(const [key,value] of Object.entries(bytes))await writeFile(`artifacts/${name.replace(' ','-')}-${key}.stl`,Buffer.from(value));
 }
-await page.locator('#reset').click();await ready();
+await original();
 // Switch styles independently, then apply the measured ZIP preset and export its fourth part.
+await page.locator('#screenStyle').selectOption('beveled');await ready();
+assert.equal(await page.evaluate(()=>caseWorkshop.getState().buttonStyle),'flexure','beveled window also supports integral tabs');
+await page.locator('[data-reset="screenStyle"]').click();await ready();
+assert.equal(await page.evaluate(()=>caseWorkshop.getState().screenStyle),'plain');
 await page.locator('#inspect-rear').click();await page.locator('#show-board').check();
 await page.screenshot({path:'artifacts/rear-with-connectors.png'});
 await page.locator('#buttonStyle').selectOption('strip');await ready();
@@ -38,7 +65,22 @@ assert((await page.evaluate(()=>caseWorkshop.getParts())).buttons);
 await page.locator('#screenStyle').selectOption('beveled');await ready();
 await number('buttonProtrusion',1.4);await number('screenChamfer',1.2);
 await page.getByRole('button',{name:'ZIP face style',exact:true}).click();await ready();
+// This known 95% combination reaches the worker but fails the solid seam check.
+// The linked control must rebuild the last valid design and keep exports usable.
+const beforeRejectedScale=await page.evaluate(()=>({state:caseWorkshop.getState(),revision:caseWorkshop.getStatus().requestedRev}));
+assert.equal(await page.locator('#global-rounding').inputValue(),'100');
+await page.locator('#global-rounding').press('ArrowLeft');await ready();
+assert.deepEqual(await page.evaluate(()=>caseWorkshop.getState()),beforeRejectedScale.state,'rejected linked rounding restores all previous parameters');
+assert((await page.evaluate(()=>caseWorkshop.getStatus().requestedRev))>=beforeRejectedScale.revision+2,'rollback schedules the restored model build');
+assert.match(await page.locator('#linked-adjustments').textContent(),/previous design was restored/i);
+assert.equal(await page.locator('#baseline-name').textContent(),'ZIP face style');
+assert(!(await page.locator('#download-set').isDisabled()));
 assert(await page.locator('#show-buttons').isChecked());assert(await page.locator('#show-front').isChecked());
+await page.locator('#buttonStyle').selectOption('flexure');await ready();
+assert(await page.locator('#export-buttons').isDisabled());
+await page.locator('[data-reset="buttonStyle"]').click();await ready();
+assert.equal(await page.evaluate(()=>caseWorkshop.getState().buttonStyle),'strip');
+assert(await page.locator('#show-buttons').isChecked(),'resetting strip style restores its visibility');
 await page.locator('#show-board').uncheck();await page.locator('#layout-mode').selectOption('assembled');await page.locator('[data-camera="perspective"]').click();
 await page.screenshot({path:'artifacts/zip-face-style.png'});
 const keyDownloadPromise=page.waitForEvent('download');await page.locator('#download-set').click();const keyDownload=await keyDownloadPromise;await keyDownload.saveAs('artifacts/zip-face-print-set.zip');
@@ -46,19 +88,35 @@ const keyZip=unzipSync(new Uint8Array(await readFile('artifacts/zip-face-print-s
 assert(keyZip['oled-buttons-snap.stl']);assert.equal(JSON.parse(strFromU8(keyZip['settings.json'])).parameters.buttonStyle,'strip');
 for(const [key,value] of Object.entries(keyZip))if(key.endsWith('.stl'))await writeFile('artifacts/zip-style-'+key,value);
 await writeFile('artifacts/zip-style-settings.json',keyZip['settings.json']);
-await page.locator('#reset').click();await ready();assert(await page.locator('#export-buttons').isDisabled());
+await original();assert(await page.locator('#export-buttons').isDisabled());
 await page.locator('#settings-file').setInputFiles('artifacts/zip-style-settings.json');await ready();assert.equal(await page.evaluate(()=>caseWorkshop.getState().screenStyle),'beveled');assert((await page.evaluate(()=>caseWorkshop.getParts())).buttons);
-await page.locator('#reset').click();await ready();
+await original();
 await page.locator('#width').fill('60');await page.locator('#width').press('Tab');await ready();assert.equal(await page.evaluate(()=>caseWorkshop.getState().width),60);
 await page.locator('#width').fill('46');await page.locator('#width').press('Tab');
 await page.waitForFunction(()=>!caseWorkshop.getStatus().inFlight&&document.querySelector('#status').classList.contains('error'));
 assert(await page.locator('#download-set').isDisabled());
-await page.locator('#reset').click();await ready();
+await original();
 await page.getByRole('button',{name:'Original STL',exact:true}).click();assert(await page.locator('#download-set').isDisabled());
 await page.screenshot({path:'artifacts/original.png'});
+await page.getByRole('button',{name:'ZIP reference',exact:true}).click();
+assert.equal(await page.locator('#zip-part option').count(),5);
+assert(await page.locator('#zip-reference-controls').isVisible());
+const zipOptions=await page.locator('#zip-part option').evaluateAll(options=>options.map(o=>({value:o.value,label:o.textContent})));
+const referenceDimensions=new Set();
+for(const option of zipOptions){
+ await page.locator('#zip-part').selectOption(option.value);
+ assert.equal(await page.locator('#view-title').textContent(),option.label);
+ assert.match(await page.locator('#view-subtitle').textContent(),/Exact ZIP mesh/);
+ assert(await page.locator('#download-set').isDisabled());
+ for(const part of ['front','bezel','back','buttons'])assert(await page.locator('#export-'+part).isDisabled());
+ referenceDimensions.add(await page.locator('#front-size').textContent());
+}
+assert(referenceDimensions.size>1,'ZIP selector updates the displayed source dimensions');
+await page.screenshot({path:'artifacts/zip-reference.png'});
 await page.getByRole('button',{name:'Editable design',exact:true}).click();assert(!(await page.locator('#download-set').isDisabled()));
 await page.locator('#layout-mode').selectOption('assembled');await page.locator('#show-board').check();await page.screenshot({path:'artifacts/assembled.png'});
 await page.locator('#layout-mode').selectOption('print');await page.screenshot({path:'artifacts/print-layout.png'});
+await page.locator('.review-details > summary').click();
 await page.locator('#copy-prompt').click();await page.waitForFunction(()=>document.querySelector('#copy-prompt').textContent==='Copied!');assert.equal(await page.locator('#copy-prompt').textContent(),'Copied!');
 const downloadPromise=page.waitForEvent('download');await page.locator('#download-set').click();const download=await downloadPromise;await download.saveAs('artifacts/default-print-set.zip');
 const zip=unzipSync(new Uint8Array(await readFile('artifacts/default-print-set.zip')));assert(zip['oled-back-snap.stl']);assert.equal(JSON.parse(strFromU8(zip['settings.json'])).parameters.closure,'snap');assert.equal(JSON.parse(strFromU8(zip['settings.json'])).schema,2);assert.equal(JSON.parse(strFromU8(zip['settings.json'])).parameters.rearOpeningWidth,24);
@@ -71,8 +129,8 @@ await page.locator('#settings-file').setInputFiles('artifacts/legacy-settings.js
 assert.equal(await page.evaluate(()=>caseWorkshop.getState().width),55);assert.equal(await page.evaluate(()=>caseWorkshop.getState().rearOpeningWidth),24);
 assert.equal(await page.evaluate(()=>Object.hasOwn(caseWorkshop.getState(),'cableWidth')),false);
 await page.reload();await ready();assert.equal(await page.evaluate(()=>caseWorkshop.getState().width),55);
-await page.locator('#reset').click();await ready();assert.equal(await page.evaluate(()=>caseWorkshop.getState().closure),'snap');
+await original();assert.equal(await page.evaluate(()=>caseWorkshop.getState().closure),'snap');
 await page.setViewportSize({width:390,height:844});await page.locator('#layout-mode').selectOption('assembled');await page.screenshot({path:'artifacts/mobile.png',fullPage:true});
 assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-assert.deepEqual(errors,[]);console.log('PASS offline Chromium: post/hole controls, rear opening controls, legacy settings migration, ZIP face styles and fourth-part export, presets, valid/invalid dimensions, reference export guard, views, ZIP/STL downloads, clipboard, settings save/load, persistence, mobile overflow; no page errors.');
+assert.deepEqual(errors,[]);console.log('PASS offline Chromium: control tiers preserve settings, selected-preset field/all resets, post/hole and rear-opening controls, legacy migration, ZIP face styles and fourth-part export, five-part exact ZIP references, valid/invalid dimensions, reference export guard, views, ZIP/STL downloads, clipboard, settings save/load, persistence, mobile overflow; no page errors.');
 await browser.close();

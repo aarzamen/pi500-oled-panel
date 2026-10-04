@@ -40,6 +40,7 @@ installer, configuration example, tests, and these guides.
 **[Open OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site)** to design a printable enclosure for the
 HW-937AB OLED module directly in the browser.
 
+- Choose Easy, Intermediate, or Expert controls, with individual and whole-preset resets.
 - Resize the shell, back cover, bezels, rounded edges, and screen/button openings.
 - Adjust PCB standoff outside diameter and screw-hole diameter independently.
 - Position a rear opening for straight DuPont connectors.

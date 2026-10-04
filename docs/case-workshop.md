@@ -6,6 +6,19 @@ The workshop designs a front shell, optional outer bezel, and matching back cove
 for the HW-937AB OLED board used by this project. It runs in the browser and exports
 STL files in millimeters. It is separate from the OLED's Pi runtime.
 
+## Choose a control level
+
+**Easy** has linked percentage controls for wall thickness and rounding plus a few
+style choices. **Intermediate** exposes individual part sizes and PCB mounts.
+**Expert** adds positions, fit clearances, catch details and wireframe view.
+Switching levels preserves the model. Each ↺ resets one field to the selected
+starting preset; Reset all restores that entire preset. Linked adjustments can
+enlarge the shell to preserve clearance, and report those changes beside the sliders.
+
+**Original STL** displays the exact supplied front and bezel. **ZIP reference**
+shows all five supplied ZIP meshes individually. Use **ZIP face style** for the
+editable reconstruction of that archive's screen and button shapes.
+
 ## Make a case
 
 1. Start with **Original footprint**, **Rounded**, **Slim slip fit**, **Screw cover**,
@@ -54,3 +67,5 @@ These checks do not establish physical fit, snap strength, or print success.
 The offline HTML has the same controls and built-in geometry code as the public
 site. For development, use the npm build and verification commands in the workshop
 README. The existing OLED v0.1.0 release assets remain separate from this case tool.
+
+Downloads are binary STL in millimeters, individually or in a ZIP with settings. STEP export is not available. Invalid linked combinations restore the previous design; the workshop README records known numerical limits and the validation scope.

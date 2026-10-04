@@ -4,14 +4,46 @@
 
 For offline use, download the [complete workshop package](oled-case-workshop.zip), extract it, and open `oled-case-playground.html` in Chrome, Edge, or Safari. It contains the complete app and works offline; no install or server is needed. The tested browser is Chromium.
 
+## Control levels and resets
+
+- **Easy:** two linked sliders for wall thickness and edge rounding, plus the
+  screen style, button style, outer bezel, and closing mechanism.
+- **Intermediate:** individual part sizes, PCB screw/post diameters, bezels,
+  opening sizes, and inspection views.
+- **Expert:** all controls, including feature positions, clearances, catch geometry,
+  mounting-post enablement, and wireframe view.
+
+Changing levels preserves the design. Every dimensional slider has a visible
+**↺** reset. It restores that field to the selected starting preset, shown above
+Whole-case adjustments. **Reset all** restores the complete selected preset;
+choose **Original footprint** to return to the original starting design.
+Settings files now retain the starting preset. Older files use Original footprint
+as their reset baseline. There is also a reset for exploded-view separation.
+
+The Easy sliders use percentages: **100%** means the selected starting preset.
+Wall scale links the shell wall, front face, rear plate/wall, outer sleeve wall,
+and screen rim in their starting proportions. Sleeve clearance is kept separate.
+Rounding scale links body, cover, bezel, window, button and rear-opening radii.
+Clip spring thickness, PCB posts, screw holes, positions and fit clearances remain
+independent. The case can grow to preserve the PCB/feature clearance; the panel
+lists those adjustments. Some values are limited or rounded to preserve material
+and mesh stability. A linked reset retains the grown outer envelope; Reset all
+restores its size too. Intermediate and Expert allow individual overrides.
+
+If a linked combination cannot produce a valid solid, the editor restores the
+last valid design and its starting preset, with an explanation. Advanced invalid
+combinations leave the last valid shape visible and disable export until corrected.
+The current triangulator rejects a few proportional rounding combinations; see
+Verification below. These are not exported as broken STL files.
+
 ## Use
 
 1. Choose a starting preset, then adjust dimensions in millimeters. Drag to orbit, scroll to zoom, or use Front / Back / Fit.
-2. Switch between assembled, exploded, and print layouts. **Original STL** shows the unchanged source geometry for comparison; exports are disabled in that view.
+2. Switch between assembled, exploded, and print layouts. **Original STL** shows the unchanged original shell and bezel. **ZIP reference** lets you inspect all five original parts from the supplied archive individually. Generated exports are disabled in both fixed reference views.
 3. Select **Snap-fit**, **Slip-fit**, or **Screw-fastened** under **Back cover & fit**. Adjust shell depth, cover depth, engagement, and clearance independently.
 4. Under **PCB mounting screws**, set **Standoff outside diameter** and **Screw-hole diameter**. **Inspect mounting posts** turns the shell over and hides the cover. Hole diameter means the modeled pilot bore; choose it for the actual screw and printed material.
 5. Under **Rear connector opening**, set width, height, horizontal/vertical offsets, and corner radius. **Inspect rear opening** isolates the cover. The gap passes straight through the backplate; all top case walls stay continuous.
-6. Choose window and button styles separately, or use **ZIP face style** to apply the supplied ZIP's beveled window and rounded key strip together. Selecting a button style loads its starting dimensions. **Button protrusion** adjusts how far separate keys stand above the face.
+6. Choose window and button styles separately, or use **ZIP face style** to apply the supplied ZIP's beveled window and rounded key strip together. Selecting a screen or button style loads its starting feature dimensions. The screen shifts left when needed to clear the selected buttons. **Button protrusion** adjusts how far separate keys stand above the face.
 7. Use **Download print set** for separate front / outer bezel / back STL files, plus the optional button strip, settings, a design brief, and fit notes. Individual STL buttons are also available. Save and load JSON settings to keep variations. Older settings load with the new rear-opening defaults; the retired top-notch dimensions are discarded.
 
 The standoff and screw-hole diameters are independent; combinations leaving too little post material or touching buttons are rejected. Wider posts may require narrower buttons or moving features. PCB post centers and 3 mm post height remain fixed.
@@ -49,18 +81,21 @@ The back cover and closure details are new designs:
 
 Exports use millimeters and start at Z=0. Cover and sleeve are flipped face-down; the optional button strip is flipped with its retaining flanges on the bed and keys pointing upward. The raised screen rim can require support under the front face; inspect slicer orientation, bridges, and supports before printing. View transforms and colors do not affect export geometry.
 
+Exports are binary **STL**, in millimeters. **STEP export is not supported** by this polygonal editor.
+
 ## Included files
 
 - `oled-case-playground.html`: self-contained interactive app.
 - `starter-snap-print-set.zip`: default generated STL set and its settings.
 - `starter-zip-face-print-set.zip`: beveled-window set with the separate rounded button strip.
 - `reference/screeen1.stl`: unchanged initial user-supplied reference.
+- `reference/zip-meshes.json`: all five exact source meshes, with provenance and rigid-transform metadata; `extract-zip-reference.py` reproduces this asset.
 - `reference/096+4btn+-+bat_stls.zip`: unchanged reference for the optional window and button-strip shapes.
 - `THIRD-PARTY-NOTICES.txt`: licenses for embedded JSCAD, Three.js, and fflate libraries. No redistribution license is asserted for the supplied reference models.
 
-## Development and verification
+## Verification and development
 
-From this directory, run `npm ci`, `npm run build`, and `npm test`. `node verify-browser.mjs` runs offline Chromium UI/export checks when Playwright's Chromium is installed.
+From this directory, run `npm ci`, `npm run build`, and `npm test`. `npm run package` refreshes the complete offline ZIP. `node verify-browser.mjs` runs offline Chromium UI/export checks when Playwright's Chromium is installed.
 
 Geometry tests cover presets, all three closures, parameter changes, measured post/hole sections, blind hole floors, unobstructed rear connector passages, continuous top walls, oriented watertight connected meshes, non-overlapping assembled parts, approximate PCB clearance, positive hook retention, and STL dimensions. Browser checks cover controls, invalid states, source view, exports, settings round trips, persistence, clipboard feedback, and mobile overflow. Exported preset STLs also passed independent Trimesh checks for watertightness, winding, single-component solids, positive volume, and bed placement.
 
@@ -79,3 +114,21 @@ In supporting browsers, the editor exposes `get_case_design` and
 `configure_case_design` through WebMCP. These read or configure the visible model;
 they do not control a printer or publish files. Invalid geometry restores the
 previous design. Standard browser controls work without WebMCP.
+
+### Usability update verification (2026-10-03)
+
+The core suite passed 17 model scenarios and 143,832 assertions. Linked-control
+checks exercised 94 states and validated 315 meshes. Four known numerical rejects
+are recorded explicitly: Original rounding 90% and 110%, ZIP rounding 95%, and
+Slim slip fit with wall and rounding both at 150%. Failed linked updates restore
+the previous valid design; this path was checked in the browser at ZIP 95%.
+
+Browser checks covered live slider editing, tier visibility without design loss,
+per-field and whole-preset resets, ordinary decimal/negative typing, all five
+presets and three closures, both independent screen/button styles, both source
+views, all five ZIP reference parts, assembled/exploded/print layouts, invalid
+export blocking and recovery, settings save/load, individual STL and ZIP downloads,
+and desktop/mobile layouts. Downloaded ZIP-style parts were independently checked
+with Trimesh: all four are closed, consistently wound, single solids with positive
+volume and print-bed Z=0. The original shell/bezel and all 7,744 ZIP source triangles
+were checked against their source files after rigid positioning transforms.
