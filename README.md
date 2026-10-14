@@ -32,7 +32,8 @@ Other boards, OLED variants, and display managers have not been validated.
 | Exact purchased module, alternatives, and wire count | [Sourcing and board variants](docs/hardware-sourcing.md) |
 | Button depth, mounting screws, rear connectors, and fit checks | [Fitment notes](docs/fitment.md) |
 | Matching native STL / STEP / Bambu project | [CAD v3 kit](mechanical/cad-rebuild/README.md), [complete ZIP](mechanical/cad-rebuild/OLED-case-CAD-v3-public.zip) |
-| Interactive case design | [Live workshop](https://oled-case-workshop.annonable.chatgpt.site), [offline ZIP](case-playground/oled-case-workshop.zip) |
+| Native parts, fit planning, and an agent handoff | [Live workbench](https://oled-case-workshop.annonable.chatgpt.site), [offline ZIP](maker-workbench/oled-maker-workbench.zip) |
+| Broader browser case design with custom STL export | [Classic editor](https://oled-case-workshop.annonable.chatgpt.site/classic.html), [offline ZIP](case-playground/oled-case-workshop.zip) |
 | What “App Not configured” means and what to build next | [Companion application plan](docs/companion-app-plan.md) |
 | A future Printables / MakerWorld listing | [Model posting kit](docs/model-posting.md) |
 | People, AI tools, references, and library notices | [Credits](CREDITS.md) |
@@ -72,7 +73,21 @@ See the [fitment notes](docs/fitment.md) before printing.
 
 ## 3D print screen case maker
 
-**[Open OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site)** to design a printable enclosure for the
+**[Open OLED case workbench](https://oled-case-workshop.annonable.chatgpt.site)**
+to inspect and download the matching native case parts, plan a measured variant,
+or prepare a coding-agent handoff. Start with wall width and rounding, then open
+board, mounting and detail controls as needed. Pi status, bench-control and sensor
+station purposes suggest projects without claiming additional firmware support.
+
+The 3D preview and STL/STEP downloads use the published CAD v3 base. Planning
+controls update the dimension sketch, stack checks and handoff; custom dimensions
+need regeneration with the native source. The handoff includes those parameters,
+critical measurements and fit trouble areas. Every field and the full plan have
+reset controls. See [workbench source and offline files](maker-workbench/README.md).
+
+![Focused workbench with native parts and fit planning](docs/images/maker-workbench.png)
+
+**[Open the classic OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site/classic.html)** to design a printable enclosure for the
 HW-937AB OLED module directly in the browser.
 
 - Choose Easy, Intermediate, or Expert controls, with individual and whole-preset resets.

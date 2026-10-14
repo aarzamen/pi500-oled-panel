@@ -9,6 +9,7 @@ tools, measurements, and validation records together.
 | Component | What exists | Validation boundary |
 | --- | --- | --- |
 | Standalone Pi 500 runtime | Seven pages, four buttons, George startup artwork, Desktop/Headless chooser, system actions, recovery tools | Physically tested on one Pi 500 and HW-937AB module; see [validation](validation.md) |
+| Focused maker workbench | Native parts preview/downloads, fit planning, saved settings and a coding-agent handoff | Planning edits need native regeneration; downloads contain the CAD v3 base |
 | Browser case workshop | Live and offline editor, tiered controls, resets, bezels, alternative closures, STL export | Mesh and browser checks; each generated design needs a print and fit check |
 | Native CAD v3 | Measured button stack, matching case/stand, dual rear knockouts, STL and native STEP | Geometry and actual software slicing checked; assembled physical fit pending |
 | Companion application | Proposed local status service and OLED reader extension | [Plan only](companion-app-plan.md); no companion installed by this package |
@@ -76,7 +77,14 @@ Both opposite panel positions are available. No top-wall cable hole is required.
 Check the buttons and latches **with the board and connectors installed**. Use
 the [fitment checklist](fitment.md) to record the result.
 
-For broader shape experiments, use the [live workshop](https://oled-case-workshop.annonable.chatgpt.site)
+The [focused maker workbench](https://oled-case-workshop.annonable.chatgpt.site)
+provides those native downloads, a dimension sketch, related fit warnings, and
+an agent handoff that preserves the critical measurements and uncertainty. Start
+with wall width and rounding; expand the board, mounting and detail groups for
+finer control. Planning edits need regeneration with the included native source
+before they become custom print files. See [its README](../maker-workbench/README.md).
+
+For broader shape experiments, use the [classic live workshop](https://oled-case-workshop.annonable.chatgpt.site/classic.html)
 or its [offline ZIP](../case-playground/oled-case-workshop.zip). It has Easy,
 Intermediate and Expert controls, per-field resets, bezels, curved edges, and
 snap/slip/screw closures. It preserves an earlier design with provisional board
@@ -92,6 +100,8 @@ The workshop exports STL. Native CAD v3 supplies STEP separately.
   [portable generator instructions](../mechanical/cad-rebuild/source/README.md).
 - [Workshop source and verification](../case-playground/README.md),
   [case-making guide](case-workshop.md).
+- [Focused workbench source](../maker-workbench/README.md),
+  [complete offline workbench](../maker-workbench/oled-maker-workbench.zip).
 - [Printables/MakerWorld draft](model-posting.md), [credits](../CREDITS.md).
 
 A current Git checkout or newly built source distribution includes these tools

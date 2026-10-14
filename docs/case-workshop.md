@@ -1,6 +1,11 @@
 # 3D print screen case maker
 
-**[Launch OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site)**
+**[Launch the classic OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site/classic.html)**
+
+The [focused workbench](https://oled-case-workshop.annonable.chatgpt.site) is the
+new front page for native CAD v3 files, fit planning and an agent handoff. This
+guide describes the earlier editor, retained for broader shape experiments and
+live custom STL export.
 
 The workshop designs a front shell, optional outer bezel, and matching back cover
 for the HW-937AB OLED board used by this project. It runs in the browser and exports

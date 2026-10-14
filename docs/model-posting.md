@@ -22,7 +22,9 @@ Screen diagonal alone does not establish compatibility: other 0.96-inch boards, 
 
 Print one front, one chosen back, **four button caps**, and the stand. Use the matching CAD v3 parts together. Fit the caps from inside, then fit the board and cover. The dual-knockout back has two scored 0.4 mm membranes with 23 × 6.4 mm openings intended for eight straight DuPont connectors exiting through the rear. Choose the relevant opening for your header orientation. Check that the caps release freely and the board does not obstruct either snap arm. Confirm orientation, supports, and material in your slicer; final tested print settings will accompany physical print evidence.
 
-Editable native STEP files, STL parts, a Bambu Studio project, portable CAD source, and design previews are included in the [CAD v3 kit](https://github.com/aarzamen/pi500-oled-panel/tree/main/mechanical/cad-rebuild). The [live OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site) and [offline workshop ZIP](https://github.com/aarzamen/pi500-oled-panel/raw/refs/heads/main/case-playground/oled-case-workshop.zip) provide a separate browser editor that exports STLs; its generated cases also require fit checks. The browser editor does not regenerate these native CAD v3 files.
+Editable native STEP files, STL parts, a Bambu Studio project, portable CAD source, and design previews are included in the [CAD v3 kit](https://github.com/aarzamen/pi500-oled-panel/tree/main/mechanical/cad-rebuild). The [focused maker workbench](https://oled-case-workshop.annonable.chatgpt.site) provides those native downloads, fit planning and a coding-agent handoff with critical dimensions and known trouble areas. Its planning edits need native regeneration; base downloads remain CAD v3.
+
+The [classic OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site/classic.html) and [offline workshop ZIP](https://github.com/aarzamen/pi500-oled-panel/raw/refs/heads/main/case-playground/oled-case-workshop.zip) provide a separate browser editor that exports custom STLs; its generated cases also require fit checks. The classic editor does not regenerate these native CAD v3 files.
 
 The [project repository](https://github.com/aarzamen/pi500-oled-panel) includes the Pi 500 runtime, wiring, recovery instructions, and validation notes. The enclosure's mechanical compatibility and the software's supported hosts are separate questions.
 
@@ -58,7 +60,7 @@ Use the [kit README and downloads](../mechanical/cad-rebuild/README.md) for the 
 5. Dimension/clearance preview showing the mounting posts and button contact surfaces.
 6. Rear photo showing straight DuPont housings, the selected opening, and the retained top walls.
 7. Short clip of all four button presses/releases and the latched cover with the board installed.
-8. Workshop screenshot with the live editor link; caption it as the separate browser design tool.
+8. Workbench screenshot with the live link; caption planning and native base downloads accurately. An optional classic-editor screenshot can show its separate custom STL workflow.
 
 Use the kit's original rendered previews while preparing the draft. They show design geometry and cannot substitute for print photos. Keep photos of earlier revisions labeled with their revision.
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## Focused maker workbench — 2026-10-14
+
+- Publish native case previews, direct STL/STEP/3MF downloads, fit planning,
+  per-field resets, saved settings and a dimension-aware coding-agent handoff.
+- Add Pi status, bench controls, sensor station and custom-board planning paths.
+- Retain the earlier editor at `/classic.html` for live custom STL generation.
+- Package an offline copy with the native kit and classic editor.
+
+Workbench controls produce a design plan; custom native parts need regeneration.
+The downloaded native files remain the measured CAD v3 base. Assembled physical
+fit remains pending. This update changes no Pi runtime or release assets.
+
 ## Hardware package — 2026-10-14
 
 - Add the native CAD v3 case/stand kit, editable STEP/STL/source, previews,

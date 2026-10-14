@@ -2,3 +2,5 @@
 *.step -text -diff
 *.stl -text -diff
 *.3mf -text -diff
+# Generated HTML embeds upstream shader strings; preserve their whitespace.
+maker-workbench/oled-maker-workbench.html -diff -whitespace

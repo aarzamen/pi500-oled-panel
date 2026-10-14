@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2052%2034%22%3E%3Crect%20width%3D%2252%22%20height%3D%2234%22%20rx%3D%225%22%20fill%3D%22%232a3942%22%2F%3E%3Cpath%20d%3D%22M7%207h28v6H7z%22%20fill%3D%22%23e4c64f%22%2F%3E%3Cpath%20d%3D%22M7%2016h28v11H7z%22%20fill%3D%22%2379cce0%22%2F%3E%3Cpath%20d%3D%22M43%206v23%22%20stroke%3D%22%23e4c64f%22%20stroke-width%3D%224%22%20stroke-dasharray%3D%223%203%22%2F%3E%3C%2Fsvg%3E">
+  <meta name="theme-color" content="#1e2b34">
+  <meta name="description" content="Inspect the native OLED CAD v3 enclosure, download STEP and print files, and draft a measured fit plan for your four-button module.">
+  <title>OLED case workbench</title>
+  <!-- WORKBENCH_CSS -->
+</head>
+<body>
+  <a class="skip-link" href="#controls">Skip to plan controls</a>
+  <header class="site-header">
+    <a class="identity" href="#" aria-label="OLED case workbench home">
+      <svg class="module-mark" viewBox="0 0 52 34" aria-hidden="true"><rect x="1" y="1" width="50" height="32" rx="5"/><path d="M8 8h26v6H8z" class="mark-yellow"/><path d="M8 16h26v10H8z" class="mark-blue"/><circle cx="43" cy="8" r="2"/><circle cx="43" cy="14" r="2"/><circle cx="43" cy="20" r="2"/><circle cx="43" cy="26" r="2"/></svg>
+      <span>OLED case workbench<small>CAD v3 · four-button module</small></span>
+    </a>
+    <nav aria-label="Workbench navigation">
+      <a href="#print-files">Print files</a>
+      <a href="#fit-check">Fit checklist</a>
+      <a href="./classic.html">Classic editor</a>
+    </nav>
+  </header>
+
+  <main class="workbench">
+    <aside class="controls-column" id="controls" aria-labelledby="plan-heading">
+      <div class="controls-heading"><h1 id="plan-heading">Plan a fit</h1><span class="revision-tag">v3 base</span></div>
+      <p class="intro">Start with the measured OLED case. Adjust a draft, then take its dimensions into native CAD.</p>
+
+      <fieldset class="purpose-picker">
+        <legend>What are you building? <button type="button" class="reset-field" data-reset="use-case" aria-label="Reset purpose to Pi status panel">Reset</button></legend>
+        <div class="purpose-options">
+          <label><input type="radio" name="use-case" value="pi-status"><span>Pi status panel<small>Boot and host controls</small></span></label>
+          <label><input type="radio" name="use-case" value="bench-controls"><span>Bench controls<small>Four local actions</small></span></label>
+          <label><input type="radio" name="use-case" value="sensor-station"><span>Sensor station<small>Readings and menus</small></span></label>
+          <label><input type="radio" name="use-case" value="custom-board"><span>Custom board<small>Bring your measurements</small></span></label>
+        </div>
+        <p class="field-help">Purpose changes the handoff brief. Measure your own board before changing its fit.</p>
+      </fieldset>
+
+      <section class="parameter-group basic-group" aria-labelledby="basic-heading">
+        <h2 id="basic-heading">Walls and corners</h2>
+        <div id="parameters-basic"></div>
+      </section>
+
+      <div class="field back-field" data-field="back">
+        <div class="field-label-row"><label for="back-choice">Rear opening</label><button type="button" class="reset-field" data-reset="back" aria-label="Reset rear opening to both panels intact">Reset</button></div>
+        <select id="back-choice">
+          <option value="back-dual-knockouts">Both panels intact</option>
+          <option value="back-lower-open">Lower panel open</option>
+          <option value="back-upper-open">Upper panel open</option>
+        </select>
+        <p class="field-help">Choose the side for your header. Upper and lower refer to the assembled case.</p>
+      </div>
+
+      <details class="parameter-group" id="group-board"><summary>Board, case and buttons <span class="group-count" data-count="Board"></span></summary><p class="group-intro">Use calipers. Seller and reference-model dimensions have different certainty.</p><div id="parameters-board"></div></details>
+      <details class="parameter-group" id="group-mounts"><summary>Mounts and screws <span class="group-count" data-count="Mounts"></span></summary><p class="group-intro">The mounting pitch is approximate. Pilot size does not specify a screw thread.</p><div id="parameters-mounts"></div></details>
+      <details class="parameter-group" id="group-detail"><summary>Face, latches and stand <span class="group-count" data-count="Detail"></span></summary><p class="group-intro">Change one measured fit variable at a time. Recheck the full button stack.</p><div id="parameters-detail"></div></details>
+
+      <div class="plan-storage">
+        <div class="storage-buttons"><button type="button" id="save-plan">Save in browser</button><button type="button" id="load-plan">Load saved</button></div>
+        <div class="storage-buttons"><label class="button" for="import-settings">Import JSON<input id="import-settings" type="file" accept="application/json,.json"></label><button type="button" id="reset-all" class="quiet-button">Reset all</button></div>
+        <p id="storage-status" class="field-help">This draft stays in this browser.</p>
+      </div>
+    </aside>
+
+    <div class="workspace-column">
+      <section class="native-view" aria-labelledby="native-heading">
+        <div class="section-header">
+          <div><h2 id="native-heading">Printable base</h2><p>Exact exported STL geometry · hardware omitted</p></div>
+          <span class="base-badge" id="native-badge">Native CAD v3</span>
+        </div>
+        <div class="model-stage" id="model-stage">
+          <div id="model-canvas" role="img" tabindex="0" aria-label="Interactive native OLED enclosure. Drag to orbit, scroll to zoom. Use arrow keys to rotate, plus or minus to zoom, and Home to fit."></div>
+          <div class="model-fallback" id="model-fallback" hidden><img src="./cad-v3/assembly-preview.png" alt="Native CAD v3 enclosure and stand previews"><p>Interactive 3D is unavailable here. The native files and dimension draft still work.</p></div>
+          <div class="model-caption"><span class="part-key"><i class="key-front"></i>Front</span><span class="part-key"><i class="key-cap"></i>4 caps</span><span class="part-key"><i class="key-back"></i>Selected back</span><span class="part-key stand-legend"><i class="key-stand"></i>Stand, separate</span></div>
+          <span class="model-dimensions">51.3 × 33.4 × 12.2 mm</span>
+        </div>
+        <div class="view-toolbar">
+          <div class="camera-controls" role="group" aria-label="Camera views"><button type="button" data-view="front">Front</button><button type="button" data-view="back">Back</button><button type="button" data-view="angle">Angle</button><button type="button" data-view="fit">Fit</button><button type="button" data-zoom="in" aria-label="Zoom in">+</button><button type="button" data-zoom="out" aria-label="Zoom out">−</button></div>
+          <div class="view-toggles"><label><input type="checkbox" id="exploded-view">Explode parts</label><label><input type="checkbox" id="show-stand">Show stand</label><button type="button" id="reset-view" class="text-button">Reset view</button></div>
+        </div>
+        <p class="view-note" id="native-note">Orbit with a drag; scroll or pinch to zoom. The stand is shown beside the case.</p>
+      </section>
+
+      <section class="draft-section" aria-labelledby="draft-heading">
+        <div class="section-header"><div><h2 id="draft-heading">Dimension draft</h2><p id="draft-description">Calculated from your plan. Dimensions are in millimeters.</p></div><span class="draft-badge" id="draft-badge">Base dimensions</span></div>
+        <div class="sketch-and-stack"><div id="dimension-sketch" class="dimension-sketch"></div><dl class="stack-readout"><div><dt>Case width</dt><dd id="dim-width"></dd></div><div><dt>Case height</dt><dd id="dim-height"></dd></div><div><dt>Case depth</dt><dd id="dim-depth"></dd></div><div class="stack-divider"><dt>PCB front, Z</dt><dd id="dim-pcb-front"></dd></div><div><dt>PCB back, Z</dt><dd id="dim-pcb-back"></dd></div><div><dt>Pin rear, Z</dt><dd id="dim-pin-rear"></dd></div><div><dt>Cap contact, Z</dt><dd id="dim-button-rest"></dd></div></dl></div>
+        <div id="plan-warnings" class="plan-warnings" aria-live="polite" aria-atomic="true"></div>
+        <p class="draft-limit">The sketch is a planning aid. Parameter changes need regeneration with the native source before they become print files.</p>
+      </section>
+
+      <section class="downloads-section" id="print-files" aria-labelledby="downloads-heading">
+        <div class="section-header"><div><h2 id="downloads-heading">Download the base print set</h2><p>One front, one back, four caps, and the matching stand.</p></div><span class="base-badge" id="downloads-badge">Base files</span></div>
+        <p id="download-notice" class="download-notice" hidden>Your draft has changed dimensions. These downloads still contain the original CAD v3 base.</p>
+        <div class="main-downloads"><a class="button primary-button" href="./cad-v3/OLED-case-CAD-v3-public.zip" download>Complete native kit <span>ZIP</span></a><a class="button" href="./cad-v3/OLED-case-CAD-v3.3mf" download>Standard Bambu project <span>3MF</span></a></div>
+        <div class="part-downloads"><a href="./cad-v3/STL/front.stl" download><span>Front shell</span><strong>STL</strong></a><a id="selected-back-stl" href="./cad-v3/STL/back-dual-knockouts.stl" download><span id="selected-back-label">Back · panels intact</span><strong>STL</strong></a><a href="./cad-v3/STL/button-cap.stl" download><span>Button cap <small>Print 4 copies</small></span><strong>STL</strong></a><a href="./cad-v3/STL/stand.stl" download><span>Matching stand</span><strong>STL</strong></a></div>
+        <p class="field-help">The Bambu project contains the intact-panel back. For an already-open back, use its selected STL.</p>
+        <div class="native-step-row"><a class="button" href="./cad-v3/STEP/enclosure-only.step" download>Enclosure assembly <span>STEP</span></a><span>Front, lower-open back and 4 caps. No PCB or stand.</span></div>
+        <details class="step-downloads"><summary>Individual native STEP files</summary><div class="step-links"><a href="./cad-v3/STEP/front.step" download>Front</a><a href="./cad-v3/STEP/back-dual-knockouts.step" download>Back · panels intact</a><a href="./cad-v3/STEP/back-lower-open.step" download>Back · lower open</a><a href="./cad-v3/STEP/back-upper-open.step" download>Back · upper open</a><a href="./cad-v3/STEP/button-cap.step" download>Button cap</a><a href="./cad-v3/STEP/stand.step" download>Stand</a></div></details>
+        <p class="download-footnote">The standard 3MF uses normal cooldown and unload settings. Inspect your material and printer profile before printing.</p>
+      </section>
+
+      <details class="handoff-section" id="handoff-panel" open>
+        <summary><span>Take this plan into CAD</span><span class="summary-note">Live handoff + settings</span></summary>
+        <div class="handoff-content"><p>Give the handoff and settings to your CAD agent, or use them with the portable source. It includes the measurements, uncertainty, and trouble areas that matter.</p><div class="handoff-actions"><button type="button" id="copy-handoff" class="primary-button">Copy handoff</button><button type="button" id="download-handoff">Download handoff <span>MD</span></button><button type="button" id="download-settings">Save settings <span>JSON</span></button></div><label class="visually-hidden" for="handoff-text">CAD agent handoff</label><textarea id="handoff-text" readonly spellcheck="false"></textarea><p id="copy-fallback" class="field-help" hidden>Handoff selected. Press ⌘C on Mac or Ctrl+C to copy it.</p><a class="source-link" href="https://github.com/aarzamen/pi500-oled-panel/blob/main/mechanical/cad-rebuild/source/README.md" target="_blank" rel="noopener">Open native regeneration instructions</a></div>
+      </details>
+
+      <section class="fit-section" id="fit-check" aria-labelledby="fit-heading">
+        <div class="section-header"><div><h2 id="fit-heading">Before calling it a fit</h2><p>Assembled physical v3 fit is still unverified.</p></div><a href="https://github.com/aarzamen/pi500-oled-panel/blob/main/docs/fitment.md" target="_blank" rel="noopener">Full fit guide</a></div>
+        <div class="fit-layout"><div class="fit-checklist"><label><input type="checkbox" data-check="measure"><span>Measure the board outline, mount pitch, switch positions, and header side.</span></label><label><input type="checkbox" data-check="mount"><span>Dry-fit all four mounts. Check screw clamping and depth with no PCB bending.</span></label><label><input type="checkbox" data-check="buttons"><span>Secure the board, then test all four caps for travel and immediate return.</span></label><label><input type="checkbox" data-check="close"><span>Check the image and glass, then close the assembled case and test both latches.</span></label><label><input type="checkbox" data-check="cables"><span>Fit all eight rear DuPont housings; check the stand and connected cable clearance.</span></label><label><input type="checkbox" data-check="record"><span>Record material, printer, screws and the result. Photograph the assembled v3 print.</span></label><p class="field-help">Checkmarks are your local notes. They do not verify hardware automatically.</p></div><aside class="datum-notes"><h3>Keep these datums straight</h3><p><strong>4.75 mm</strong> is the PCB right edge to the nearest fixed housing edge. The 14.25 mm button center uses an estimated outline and housing width.</p><p><strong>Approx. 40 × 24 mm</strong> mount pitch still needs a precise remeasure.</p><p><strong>2.65 / 1.8 mm</strong> are the moving button peak / fixed housing heights above the front of the PCB.</p><p><strong>Eight pins:</strong> power, I²C, and four independent keys. Four wires do not carry this complete panel.</p><p>Open the correct rear panel for straight DuPont plugs. An empty-case latch test does not establish assembled closure.</p></aside></div>
+      </section>
+
+      <section class="guide-links" aria-labelledby="guides-heading"><h2 id="guides-heading">Source, build notes and posting</h2><div class="guide-grid"><a href="https://www.amazon.com/dp/B0GWQPY2C7" target="_blank" rel="noopener"><strong>Source module</strong><span>ACEIRMC SSD1315 · four keys · eight pins</span></a><a href="https://github.com/aarzamen/pi500-oled-panel/blob/main/docs/hardware-sourcing.md" target="_blank" rel="noopener"><strong>Sourcing and variants</strong><span>Measurements and untested alternatives</span></a><a href="https://github.com/aarzamen/pi500-oled-panel/blob/main/docs/hardware-and-software.md" target="_blank" rel="noopener"><strong>Hardware + software guide</strong><span>Print, wire and use the panel</span></a><a href="https://github.com/aarzamen/pi500-oled-panel/blob/main/docs/companion-app-plan.md" target="_blank" rel="noopener"><strong>Future companion app</strong><span>Planned interface and backend scope</span></a><a href="https://github.com/aarzamen/pi500-oled-panel/blob/main/docs/model-posting.md" target="_blank" rel="noopener"><strong>Model posting instructions</strong><span>Prepared copy and required print evidence</span></a><a href="https://github.com/aarzamen/pi500-oled-panel/blob/main/CREDITS.md" target="_blank" rel="noopener"><strong>Credits and AI tools</strong><span>Attribution and what was actually checked</span></a></div><p class="platform-links">After your assembled fit check, follow the posting instructions for <a href="https://www.printables.com/" target="_blank" rel="noopener">Printables</a> or <a href="https://makerworld.com/" target="_blank" rel="noopener">MakerWorld</a>. Use real print photos for MakerWorld.</p></section>
+    </div>
+  </main>
+
+  <footer><span>CAD v3 is a fit prototype. Measure, print, test, then record.</span><a href="https://github.com/aarzamen/pi500-oled-panel" target="_blank" rel="noopener">Public source · MIT</a></footer>
+  <div class="toast" id="feedback" role="status" aria-live="polite" hidden></div>
+  <noscript><p class="noscript-note">JavaScript is needed for the draft and 3D controls. The base native downloads and guide links above still work.</p></noscript>
+  <!-- WORKBENCH_JS -->
+</body>
+</html>

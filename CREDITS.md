@@ -7,6 +7,8 @@ physical design direction, measurements, fit feedback and device tests.
 
 **OpenAI Codex and ChatGPT** assisted with the Pi software, browser design tools,
 native CAD construction, geometry checks, documentation and publication. Codex
+also built the focused maker workbench, its fit planner and coding-agent handoff.
+Its preview uses the exact native STL meshes. Codex
 used CadQuery to build the v3 case and stand as editable native solids, then
 checked exported STEP/STL and software slicing. These checks do not replace
 Aaron's physical assembly and print validation.

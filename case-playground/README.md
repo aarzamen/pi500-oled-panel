@@ -1,6 +1,10 @@
 # OLED Case Workshop
 
-**[Open the public OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site)** — a 3D print screen case maker for the HW-937AB OLED module.
+**[Open the classic OLED Case Workshop](https://oled-case-workshop.annonable.chatgpt.site/classic.html)** — a 3D print screen case maker for the HW-937AB OLED module.
+
+The [focused workbench](https://oled-case-workshop.annonable.chatgpt.site) provides
+native CAD v3 downloads, fit planning and an agent handoff. This classic editor
+keeps the broader earlier design and live custom STL export.
 
 For offline use, download the [complete workshop package](https://github.com/aarzamen/pi500-oled-panel/raw/refs/heads/main/case-playground/oled-case-workshop.zip), extract it, and open `oled-case-playground.html` in Chrome, Edge, or Safari. It contains the complete app and works offline; no install or server is needed. The tested browser is Chromium.
 

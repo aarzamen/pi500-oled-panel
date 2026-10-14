@@ -13,6 +13,14 @@ include case-playground/.gitignore case-playground/LICENSE case-playground/READM
 include case-playground/package.json case-playground/package-lock.json
 include case-playground/*.js case-playground/*.mjs case-playground/*.html case-playground/*.py case-playground/*.zip
 recursive-include case-playground/reference *.stl *.json *.zip
+include maker-workbench/.gitignore maker-workbench/README.md maker-workbench/package.json maker-workbench/package-lock.json
+include maker-workbench/*.js maker-workbench/*.mjs maker-workbench/*.html maker-workbench/*.css maker-workbench/*.zip
+exclude maker-workbench/model-data.js
+prune maker-workbench/node_modules
+prune maker-workbench/site
+prune maker-workbench/artifacts
+prune maker-workbench/output
+prune maker-workbench/.playwright-cli
 prune case-playground/node_modules
 prune case-playground/.venv
 prune case-playground/artifacts
