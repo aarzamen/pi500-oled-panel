@@ -1,0 +1,61 @@
+{
+  "validation_date": "2026-10-14",
+  "status": "passed",
+  "validation_scope": "Actual native-geometry renders with default and altered configuration; captured the text sent to the saved figure.",
+  "default": {
+    "configuration": {
+      "case_width": 51.3,
+      "case_height": 33.4,
+      "case_depth": 12.200000000000001,
+      "knockout_membrane": 0.4,
+      "stand_tilt_degrees": 20.0
+    },
+    "expected_captions": {
+      "dimensions": "51.3 \u00d7 33.4 \u00d7 12.2 mm   /   case and stand   /   native STEP + STL",
+      "membrane": "Two scored rear panels; 0.4 mm sealed membranes",
+      "stand": "20\u00b0 rearward lean; two rear connector exits"
+    },
+    "actual_rendered_captions": {
+      "dimensions": "51.3 \u00d7 33.4 \u00d7 12.2 mm   /   case and stand   /   native STEP + STL",
+      "membrane": "Two scored rear panels; 0.4 mm sealed membranes",
+      "stand": "20\u00b0 rearward lean; two rear connector exits"
+    },
+    "match": true,
+    "native_case_geometry_generated": true,
+    "hardware_geometry_included": false
+  },
+  "altered": {
+    "configuration": {
+      "case_width": 52.3,
+      "case_height": 33.4,
+      "case_depth": 12.200000000000001,
+      "knockout_membrane": 0.6,
+      "stand_tilt_degrees": 25.0
+    },
+    "expected_captions": {
+      "dimensions": "52.3 \u00d7 33.4 \u00d7 12.2 mm   /   case and stand   /   native STEP + STL",
+      "membrane": "Two scored rear panels; 0.6 mm sealed membranes",
+      "stand": "25\u00b0 rearward lean; two rear connector exits"
+    },
+    "actual_rendered_captions": {
+      "dimensions": "52.3 \u00d7 33.4 \u00d7 12.2 mm   /   case and stand   /   native STEP + STL",
+      "membrane": "Two scored rear panels; 0.6 mm sealed membranes",
+      "stand": "25\u00b0 rearward lean; two rear connector exits"
+    },
+    "match": true,
+    "native_case_geometry_generated": true,
+    "hardware_geometry_included": false
+  },
+  "published_default_images_byte_unchanged": true,
+  "default_regenerated_images_byte_identical": {
+    "assembly-preview.png": true,
+    "case-preview.png": true,
+    "stand-preview.png": true
+  },
+  "published_models_and_3mf_byte_unchanged": true,
+  "variant_models_published": false,
+  "physical_fit_status": "unverified",
+  "default_image_verification_method": "Ran the complete default exporter, including its print-mesh tessellation before preview rendering.",
+  "default_export_STLs_and_3mf_byte_identical": true,
+  "preview_source_sha256": "9a4d05ade6e4a5986b29909c2f398270fbd7502c55985720ce35deff634c00f2"
+}

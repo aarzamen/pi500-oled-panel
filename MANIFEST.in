@@ -1,17 +1,29 @@
 # Explicit source-release contents; wheel contents are controlled by pyproject.toml.
 exclude *
-include README.md CHANGELOG.md LICENSE MANIFEST.in pyproject.toml .gitignore
+include README.md CHANGELOG.md CREDITS.md LICENSE MANIFEST.in pyproject.toml .gitignore .gitattributes
 include config.example.json hardware_check.py test_hardware_check.py
 recursive-include oled_panel *.py
 include oled_panel/assets/george-startup.png
 recursive-include tests *.py
 include system/install.py system/install.sh system/uninstall.sh system/oled-panel-action
-include docs/setup.md docs/validation.md docs/panelbridge.md
+recursive-include docs *.md *.png *.jpeg
+recursive-include mechanical/cad-rebuild *.md *.py *.json *.txt *.png *.step *.stl *.3mf *.zip *.sha256
+include mechanical/cad-rebuild/LICENSE
+include case-playground/.gitignore case-playground/LICENSE case-playground/README.md case-playground/THIRD-PARTY-NOTICES.txt
+include case-playground/package.json case-playground/package-lock.json
+include case-playground/*.js case-playground/*.mjs case-playground/*.html case-playground/*.py case-playground/*.zip
+recursive-include case-playground/reference *.stl *.json *.zip
+prune case-playground/node_modules
+prune case-playground/.venv
+prune case-playground/artifacts
+prune mechanical/cad-rebuild/source/.venv
+prune mechanical/cad-rebuild/source/__pycache__
 prune .git
 prune .venv
 prune .uv-bootstrap
 prune .superpowers
 prune .release
+prune .sites
 prune pi500-oled-handoff
 prune previews
 prune build

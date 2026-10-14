@@ -1,5 +1,16 @@
 # Changelog
 
+## Hardware package — 2026-10-14
+
+- Add the native CAD v3 case/stand kit, editable STEP/STL/source, previews,
+  standard Bambu project and software validation receipts.
+- Tie runtime, browser workshop and native CAD together with sourcing, measured
+  fitment, credits, a future companion-app plan and model-posting copy.
+- Include case tools and the hardware kit in newly built source distributions.
+
+CAD v3 assembled physical fit and the companion implementation remain pending.
+This publication does not deploy software or change v0.1.0 release assets.
+
 ## 0.1.1.dev1 — development
 
 - Add optional same-host PanelBridge startup choices and monitor status,

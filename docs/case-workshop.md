@@ -6,6 +6,12 @@ The workshop designs a front shell, optional outer bezel, and matching back cove
 for the HW-937AB OLED board used by this project. It runs in the browser and exports
 STL files in millimeters. It is separate from the OLED's Pi runtime.
 
+For the newer case built around measured button depth, use the
+[native CAD v3 kit](../mechanical/cad-rebuild/README.md). It includes native STEP
+and a matching deeper stand. The workshop preserves its earlier model and does
+not regenerate v3. Read [fitment](fitment.md) and [sourcing](hardware-sourcing.md)
+before treating any design as a match for the compact board.
+
 ## Choose a control level
 
 **Easy** has linked percentage controls for wall thickness and rounding plus a few

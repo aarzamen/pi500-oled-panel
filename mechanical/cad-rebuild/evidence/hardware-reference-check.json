@@ -1,0 +1,65 @@
+{
+  "validation_date": "2026-10-14",
+  "reference_title": "OLED | 0.96 | 4 button",
+  "reference_author": "Hellfire",
+  "reference_date": "2025-04-08",
+  "reference_sha256": "ed957ded2c544964b1bec1acb4370eca514f40954b93bac7f33eac63be0a1356",
+  "hardware_geometry_redistributed": false,
+  "proper_rotation": {
+    "rotation_axis": [
+      1,
+      0,
+      0
+    ],
+    "rotation_degrees": 180,
+    "matrix": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        -1,
+        0
+      ],
+      [
+        0,
+        0,
+        -1
+      ]
+    ],
+    "determinant": 1,
+    "symmetric_difference_mm3": 0.0,
+    "source_y_negated": true
+  },
+  "modeled_checks": {
+    "front_hardware_mm3": 0,
+    "cover_hardware_mm3": {
+      "back-dual-knockouts": 0,
+      "back-lower-open": 0,
+      "back-upper-open": 0
+    },
+    "cap_fixed_hardware_mm3": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "pressed_cap_fixed_hardware_mm3": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "display_throat_outside_glass_body_mm3": 0.0
+  },
+  "uncertainties": [
+    "Community STEP approximates the hardware; it is not a manufacturer drawing.",
+    "Regions above the measured stationary height are conservative moving keepouts; the source includes part of its nominal metal chamfer in those regions.",
+    "Mount pad profiles are relocated from the imported fused solid, which represents them as shallow surface recesses rather than protruding copper.",
+    "Header geometry retains the source approximate pitch; connector ports must also clear the physical 2.54 mm DuPont array and wiring.",
+    "Physical assembled fit and dimensions not explicitly measured remain unverified."
+  ],
+  "physical_fit_status": "unverified"
+}

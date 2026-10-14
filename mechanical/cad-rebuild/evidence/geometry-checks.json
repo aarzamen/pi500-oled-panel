@@ -1,0 +1,426 @@
+{
+  "units": "mm",
+  "physical_fit_status": "unverified",
+  "dimensions": {
+    "case_width": 51.3,
+    "case_height": 33.4,
+    "case_depth": 12.200000000000001,
+    "pcb_front_z": 4.55,
+    "pcb_back_z": 6.15,
+    "post_height": 2.668484,
+    "post_base_height": 0.6815159999999998,
+    "measured_switch_top_height": 2.65,
+    "measured_switch_fixed_height": 1.8
+  },
+  "parameters": {
+    "units": "mm",
+    "source_sha256": "ed957ded2c544964b1bec1acb4370eca514f40954b93bac7f33eac63be0a1356",
+    "calibration_complete": true,
+    "measured_switch_top_height": 2.65,
+    "measured_switch_fixed_height": 1.8,
+    "pcb_thickness": 1.6,
+    "pcb_keepout_width": 44.53,
+    "pcb_keepout_height": 27.66,
+    "mount_hole_pitch_x": 40.0,
+    "mount_hole_pitch_y": 24.0,
+    "mount_hole_y_offset": 0.0,
+    "button_x": 14.25,
+    "button_centers_y": [
+      -8.7,
+      -3.033333333333333,
+      2.633333333333333,
+      8.3
+    ],
+    "source_button_x": 15.0,
+    "source_button_centers_y": [
+      8.7,
+      3.033333333333333,
+      -2.633333333333333,
+      -8.3
+    ],
+    "glass_center_x": -4.65,
+    "glass_center_y": 1.25,
+    "glass_width": 24.5,
+    "glass_height": 16.5,
+    "window_overlap_x": 0.3,
+    "window_overlap_y": 0.2,
+    "header_x": -0.4466718341589448,
+    "header_y": -10.73000017881395,
+    "header_rear_projection": 4.4,
+    "header_pitch": 2.54,
+    "case_width": 51.3,
+    "case_height": 33.4,
+    "corner_radius": 3.5,
+    "wall": 1.6,
+    "face": 1.2,
+    "cover_face": 1.2,
+    "cover_seam_z": 8.0,
+    "rear_clearance": 0.4,
+    "post_height": 2.668484,
+    "post_diameter": 4.0,
+    "post_base_diameter": 5.0,
+    "pilot_diameter": 1.55,
+    "pilot_depth": 2.4,
+    "cap_width": 4.6,
+    "cap_height": 2.6,
+    "cap_total_depth": 3.305,
+    "cap_flange_width": 7.6,
+    "cap_flange_height": 5.1,
+    "cap_flange_depth": 0.4,
+    "cap_release_gap": 0.3,
+    "cap_travel_check": 0.35,
+    "cap_side_clearance": 0.25,
+    "fit": 0.2,
+    "snap_width": 7.0,
+    "snap_thickness": 0.7,
+    "snap_engagement": 0.3,
+    "snap_shoulder_z": 5.4,
+    "snap_lead_height": 0.8,
+    "knockout_width": 23.0,
+    "knockout_height": 6.4,
+    "knockout_radius": 0.7,
+    "knockout_score_width": 0.6,
+    "knockout_membrane": 0.4,
+    "stand_clearance": 0.25,
+    "stand_tilt_degrees": 20.0,
+    "layer_height": 0.2,
+    "physical_calibration": {
+      "mount_hole_pitch_x": 40,
+      "mount_hole_pitch_y": 24,
+      "mount_spacing_precision": "approximate; user caliper battery low",
+      "pcb_right_edge_to_nearest_fixed_switch_edge": 4.75,
+      "button_x_derivation": "STEP PCB right edge22.0 minus measured outer gap4.75 minus modeled switch half-width3.0 =14.25; PCB outline and switch width remain STEP estimates",
+      "switch_top_height": 2.65,
+      "switch_fixed_height": 1.8
+    },
+    "snap_insertion_clearance_note": "Increase the original 50.5 mm width by 0.8 mm to clear the 44.53 mm PCB keepout when the arms compress 0.5 mm. Calculated minimum radial clearance is 0.385 mm.",
+    "pcb_front_z": 4.55,
+    "pcb_back_z": 6.15,
+    "case_depth": 12.200000000000001,
+    "cover_inside_z": 11.000000000000002,
+    "post_base_height": 0.6815159999999998,
+    "mount_centers": [
+      [
+        -20.0,
+        -12.0
+      ],
+      [
+        -20.0,
+        12.0
+      ],
+      [
+        20.0,
+        -12.0
+      ],
+      [
+        20.0,
+        12.0
+      ]
+    ],
+    "header_centers": [
+      [
+        -0.4466718341589448,
+        -10.73000017881395
+      ],
+      [
+        0.4466718341589448,
+        10.73000017881395
+      ]
+    ]
+  },
+  "parts": {
+    "front": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 3375.2159840780737,
+      "dimensions_mm": [
+        51.3,
+        33.4,
+        8.0
+      ],
+      "bounds": [
+        [
+          -25.65,
+          -16.7,
+          0.0
+        ],
+        [
+          25.65,
+          16.7,
+          8.0
+        ]
+      ]
+    },
+    "button-cap": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 48.99902118271793,
+      "dimensions_mm": [
+        7.6,
+        5.1,
+        3.305
+      ],
+      "bounds": [
+        [
+          -3.8,
+          -2.55,
+          0.0
+        ],
+        [
+          3.8,
+          2.55,
+          3.305
+        ]
+      ]
+    },
+    "back-dual-knockouts": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 3037.665669954138,
+      "dimensions_mm": [
+        51.3,
+        33.4,
+        7.65
+      ],
+      "bounds": [
+        [
+          -25.65,
+          -16.7,
+          4.550000000000001
+        ],
+        [
+          25.65,
+          16.7,
+          12.200000000000001
+        ]
+      ]
+    },
+    "back-lower-open": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 2861.5304134738253,
+      "dimensions_mm": [
+        51.3,
+        33.4,
+        7.65
+      ],
+      "bounds": [
+        [
+          -25.65,
+          -16.7,
+          4.550000000000001
+        ],
+        [
+          25.65,
+          16.7,
+          12.200000000000001
+        ]
+      ]
+    },
+    "back-upper-open": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 2861.5304134738253,
+      "dimensions_mm": [
+        51.3,
+        33.4,
+        7.65
+      ],
+      "bounds": [
+        [
+          -25.65,
+          -16.7,
+          4.550000000000001
+        ],
+        [
+          25.65,
+          16.7,
+          12.200000000000001
+        ]
+      ]
+    },
+    "stand": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 6950.5083680246125,
+      "dimensions_mm": [
+        56.8,
+        36.0,
+        17.15527120091701
+      ],
+      "bounds": [
+        [
+          -28.4,
+          -18.0,
+          0.0
+        ],
+        [
+          28.4,
+          18.0,
+          17.15527120091701
+        ]
+      ]
+    }
+  },
+  "checks": {
+    "cap_front_mm3": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "pressed_cap_front_mm3": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "neighbor_cap_mm3": [
+      0,
+      0,
+      0
+    ],
+    "front_cover_mm3": 0,
+    "stand_front_mm3": 0,
+    "stand_cover_mm3": 0,
+    "stand_caps_mm3": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "stand_connector_mm3": [
+      0,
+      0
+    ],
+    "open_connector_mm3": [
+      0,
+      0
+    ],
+    "closed_connector_mm3": [
+      102.41279999999993,
+      102.41279999999995
+    ],
+    "knockout_membrane_mm": 0.4,
+    "snap_compression_mm": 0.5,
+    "compressed_arm_pcb_mm3": [
+      0,
+      0
+    ],
+    "compressed_arm_radial_clearance_mm": 0.384999999999998
+  },
+  "hardware_reference": {
+    "status": "not-requested",
+    "geometry_redistributed": false,
+    "note": "Hardware collision checks require a separately supplied original STEP."
+  },
+  "step_round_trip": {
+    "front": {
+      "valid": true,
+      "solids": 1,
+      "volume_difference_mm3": 1.7280399333685637e-11
+    },
+    "button-cap": {
+      "valid": true,
+      "solids": 1,
+      "volume_difference_mm3": 4.476419235288631e-13
+    },
+    "back-dual-knockouts": {
+      "valid": true,
+      "solids": 1,
+      "volume_difference_mm3": 4.501998773775995e-11
+    },
+    "back-lower-open": {
+      "valid": true,
+      "solids": 1,
+      "volume_difference_mm3": 2.2509993868879974e-10
+    },
+    "back-upper-open": {
+      "valid": true,
+      "solids": 1,
+      "volume_difference_mm3": 5.411493475548923e-11
+    },
+    "stand": {
+      "valid": true,
+      "solids": 1,
+      "volume_difference_mm3": 3.050363375223242e-07
+    }
+  },
+  "enclosure_assembly": {
+    "file": "STEP/enclosure-only.step",
+    "valid": true,
+    "solids": 6,
+    "hardware_included": false
+  },
+  "print_rotation": {
+    "rotation_axis": [
+      1,
+      0,
+      0
+    ],
+    "rotation_degrees": 180,
+    "determinant": 1,
+    "translation": [
+      0,
+      0,
+      12.200000000000001
+    ]
+  },
+  "print_stl_sha256": {
+    "front": "a01b2e8d8b9a3221aeb547a27ac6d7e8a939f86e114a16b1c65d64f51247437d",
+    "button-cap": "8f7b895ff55436e64f83ec8ba8d73415498702e15f341648c05fd411ab48b90e",
+    "back-dual-knockouts": "3e436336ea0fcf9ad9f30a5e2cb98b1e17ede12d280cc1f8185169d7f2b7cf83",
+    "back-lower-open": "9dbbbeff0643472fc532057a97a09ca50226c74eed8489ad0f9c694bd7e44593",
+    "back-upper-open": "50ca7889118cfefe82932a881a5e8cfc15fcbda5769feabbc526d7eb34ddf34b",
+    "stand": "9d3571efb509cd8529861dccc5783c66ee5ccc308ad8252d64cfc5829b7b9852"
+  },
+  "tools": {
+    "python": "3.12.11",
+    "cadquery": "2.8.0",
+    "trimesh": "5.1.1"
+  },
+  "project_objects": [
+    {
+      "object_id": 2,
+      "part": "front",
+      "plate": 1,
+      "label": 9001
+    },
+    {
+      "object_id": 4,
+      "part": "back-dual-knockouts",
+      "plate": 1,
+      "label": 9002
+    },
+    {
+      "object_id": 6,
+      "part": "button-cap",
+      "plate": 1,
+      "label": 9003
+    },
+    {
+      "object_id": 8,
+      "part": "button-cap",
+      "plate": 1,
+      "label": 9004
+    },
+    {
+      "object_id": 10,
+      "part": "button-cap",
+      "plate": 1,
+      "label": 9005
+    },
+    {
+      "object_id": 12,
+      "part": "button-cap",
+      "plate": 1,
+      "label": 9006
+    },
+    {
+      "object_id": 14,
+      "part": "stand",
+      "plate": 2,
+      "label": 9007
+    }
+  ]
+}

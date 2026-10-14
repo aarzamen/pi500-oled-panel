@@ -1,0 +1,19 @@
+{
+  "slicer": "Bambu Studio",
+  "version": "02.06.01.55",
+  "printer": "Bambu Lab X1 Carbon 0.4 nozzle",
+  "process": "0.20mm Standard @BBL X1C with 3 walls, 20% infill and supports",
+  "filament": "Generic ABS",
+  "end_gcode_template": "Bambu Lab X1 Carbon 0.4 nozzle template machine_end_gcode",
+  "vendor_template_sha256": "e90eb249dceb719ff8511b59275793a85ab84e1d5b5d4981e1fe6256fb6ffe54",
+  "end_behavior": [
+    "turn bed off",
+    "unload filament using normal vendor sequence",
+    "turn hotend off"
+  ],
+  "personal_paths_and_account_ids": "excluded",
+  "vendor_template_resource_path": "profiles/BBL/machine/Bambu Lab X1 Carbon 0.4 nozzle template machine_end_gcode.json",
+  "vendor_template_header_date": "20240528",
+  "upstream_source": "https://github.com/bambulab/BambuStudio/tree/master/resources/profiles/BBL",
+  "upstream_license": "https://github.com/bambulab/BambuStudio/blob/master/LICENSE"
+}

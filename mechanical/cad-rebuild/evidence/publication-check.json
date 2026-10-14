@@ -1,0 +1,269 @@
+{
+  "validation_date": "2026-10-14",
+  "status": "passed",
+  "physical_fit_status": "unverified",
+  "local_complete_package_unchanged": true,
+  "local_complete_package_files_verified": 44,
+  "parts": {
+    "front": {
+      "stl_sha256": "a01b2e8d8b9a3221aeb547a27ac6d7e8a939f86e114a16b1c65d64f51247437d",
+      "step_sha256": "11981f5613728fc18690b46882402c88b88d8459145d6b49fff424d3fdeb45c2",
+      "stl_bytes_preserved": true,
+      "step_bytes_preserved": true,
+      "mesh_triangles": 11816,
+      "mesh_watertight": true,
+      "mesh_winding_consistent": true,
+      "mesh_solids": 1,
+      "mesh_nondegenerate": true,
+      "print_z_min_mm": 0.0,
+      "step": {
+        "valid": true,
+        "solids": 1,
+        "volume_mm3": 3375.215984078091,
+        "dimensions_mm": [
+          51.3,
+          33.4,
+          8.0
+        ],
+        "bounds": [
+          [
+            -25.65,
+            -16.7,
+            0.0
+          ],
+          [
+            25.65,
+            16.7,
+            8.0
+          ]
+        ]
+      },
+      "native_source_symmetric_difference_mm3": 0.0
+    },
+    "button-cap": {
+      "stl_sha256": "8f7b895ff55436e64f83ec8ba8d73415498702e15f341648c05fd411ab48b90e",
+      "step_sha256": "e5dd4b155ebed27088605a54ad7fec40da7d0fa21254086108a04ff022359b45",
+      "stl_bytes_preserved": true,
+      "step_bytes_preserved": true,
+      "mesh_triangles": 1052,
+      "mesh_watertight": true,
+      "mesh_winding_consistent": true,
+      "mesh_solids": 1,
+      "mesh_nondegenerate": true,
+      "print_z_min_mm": 0.0,
+      "step": {
+        "valid": true,
+        "solids": 1,
+        "volume_mm3": 48.99902118271838,
+        "dimensions_mm": [
+          7.6,
+          5.1,
+          3.305
+        ],
+        "bounds": [
+          [
+            -3.8,
+            -2.55,
+            0.0
+          ],
+          [
+            3.8,
+            2.55,
+            3.305
+          ]
+        ]
+      },
+      "native_source_symmetric_difference_mm3": 0.0
+    },
+    "back-dual-knockouts": {
+      "stl_sha256": "3e436336ea0fcf9ad9f30a5e2cb98b1e17ede12d280cc1f8185169d7f2b7cf83",
+      "step_sha256": "c4ebbbdaf2dfb32f9c5f2fa045fdbcec94e46028f20a00aab46ce0b10fd752ad",
+      "stl_bytes_preserved": true,
+      "step_bytes_preserved": true,
+      "mesh_triangles": 4324,
+      "mesh_watertight": true,
+      "mesh_winding_consistent": true,
+      "mesh_solids": 1,
+      "mesh_nondegenerate": true,
+      "print_z_min_mm": -2.2044669844585975e-15,
+      "step": {
+        "valid": true,
+        "solids": 1,
+        "volume_mm3": 3037.665669954183,
+        "dimensions_mm": [
+          51.3,
+          33.4,
+          7.650000000000063
+        ],
+        "bounds": [
+          [
+            -25.65,
+            -16.7,
+            4.549999999999936
+          ],
+          [
+            25.65,
+            16.7,
+            12.2
+          ]
+        ]
+      },
+      "native_source_symmetric_difference_mm3": 0.0
+    },
+    "back-lower-open": {
+      "stl_sha256": "9dbbbeff0643472fc532057a97a09ca50226c74eed8489ad0f9c694bd7e44593",
+      "step_sha256": "80fe77cdb3ab05a784ed6e24716d708338ae229554589e2487689ab733fb9e9e",
+      "stl_bytes_preserved": true,
+      "step_bytes_preserved": true,
+      "mesh_triangles": 4328,
+      "mesh_watertight": true,
+      "mesh_winding_consistent": true,
+      "mesh_solids": 1,
+      "mesh_nondegenerate": true,
+      "print_z_min_mm": -2.2044669844585975e-15,
+      "step": {
+        "valid": true,
+        "solids": 1,
+        "volume_mm3": 2861.5304134740504,
+        "dimensions_mm": [
+          51.3,
+          33.4,
+          7.650000000000063
+        ],
+        "bounds": [
+          [
+            -25.65,
+            -16.7,
+            4.549999999999936
+          ],
+          [
+            25.65,
+            16.7,
+            12.2
+          ]
+        ]
+      },
+      "native_source_symmetric_difference_mm3": 0.0
+    },
+    "back-upper-open": {
+      "stl_sha256": "50ca7889118cfefe82932a881a5e8cfc15fcbda5769feabbc526d7eb34ddf34b",
+      "step_sha256": "c6ef389fc9341c2812dbdb485e9257f19d3e069359c5646b857835ee0f946c63",
+      "stl_bytes_preserved": true,
+      "step_bytes_preserved": true,
+      "mesh_triangles": 4328,
+      "mesh_watertight": true,
+      "mesh_winding_consistent": true,
+      "mesh_solids": 1,
+      "mesh_nondegenerate": true,
+      "print_z_min_mm": -2.2044669844585975e-15,
+      "step": {
+        "valid": true,
+        "solids": 1,
+        "volume_mm3": 2861.5304134738794,
+        "dimensions_mm": [
+          51.3,
+          33.4,
+          7.650000000000063
+        ],
+        "bounds": [
+          [
+            -25.65,
+            -16.7,
+            4.549999999999936
+          ],
+          [
+            25.65,
+            16.7,
+            12.2
+          ]
+        ]
+      },
+      "native_source_symmetric_difference_mm3": 0.0
+    },
+    "stand": {
+      "stl_sha256": "9d3571efb509cd8529861dccc5783c66ee5ccc308ad8252d64cfc5829b7b9852",
+      "step_sha256": "087606601146551a34c5c55d83e750af1d1fe9cf36a5ee7886dfc6cadeb0feaa",
+      "stl_bytes_preserved": true,
+      "step_bytes_preserved": true,
+      "mesh_triangles": 3548,
+      "mesh_watertight": true,
+      "mesh_winding_consistent": true,
+      "mesh_solids": 1,
+      "mesh_nondegenerate": true,
+      "print_z_min_mm": 0.0,
+      "step": {
+        "valid": true,
+        "solids": 1,
+        "volume_mm3": 6950.508368329649,
+        "dimensions_mm": [
+          56.8,
+          36.0,
+          17.155271200917
+        ],
+        "bounds": [
+          [
+            -28.4,
+            -18.0,
+            0.0
+          ],
+          [
+            28.4,
+            18.0,
+            17.155271200917
+          ]
+        ]
+      },
+      "native_source_symmetric_difference_mm3": 0.0
+    }
+  },
+  "enclosure_assembly": {
+    "file": "STEP/enclosure-only.step",
+    "valid": true,
+    "solids": 6,
+    "hardware_included": false
+  },
+  "public_project": {
+    "file": "OLED-case-CAD-v3.3mf",
+    "unit": "millimeter",
+    "plates": 2,
+    "objects": 7,
+    "sha256": "b1fa19fb895c1a4dc1e3359bdd49f62c9f88f8f7693eb6d3961eb139700d5dc8",
+    "meshes_identical_to_published_STLs": true,
+    "hardware_included": false,
+    "normal_cooldown_and_unload": true
+  },
+  "portable_source": {
+    "tests": 5,
+    "result": "passed",
+    "test_command": "python -m unittest discover -s source -p 'test_*.py'",
+    "relocated_source_without_hardware_or_desktop_projects": true,
+    "selected_parameters_and_profile_survive_next_rebuild": true,
+    "wrong_hardware_sha_rejected": true,
+    "unmarked_nonempty_outputs_preserved": true,
+    "full_case_only_preview_generation": "passed",
+    "extracted_zip_default_export": "passed; six exact STL bytes and all three own previews regenerated",
+    "verification_platform": "macOS arm64 with the pinned Python 3.12 environment"
+  },
+  "privacy_scan": {
+    "private_absolute_paths_and_account_identifiers": "none detected in public source and project",
+    "third_party_hardware_geometry": "excluded"
+  },
+  "limits": [
+    "Physical assembled fit, button feel, latch retention, screws, knockout removal, connector fit and stand stability remain unverified.",
+    "Community hardware STEP is approximate; measured and estimated dimensions remain distinguished.",
+    "Other module variants and printers have not been physically tested.",
+    "Generated validation G-code and CLI logs are outside the public kit; no printer command was sent.",
+    "Source relocation and ZIP regeneration were verified on the current macOS environment; other operating systems were not tested."
+  ],
+  "review_corrections": {
+    "standalone_zip_download_link": "Absolute GitHub raw main URL",
+    "parameterized_preview_captions": [
+      "case dimensions",
+      "knockout membrane thickness",
+      "stand tilt"
+    ],
+    "targeted_actual_render_checks": "Default and altered configurations passed; the complete default exporter also reproduced all three preview images, six STLs and the 3MF exactly. Prior broad test and slice suites were not repeated for these preview caption changes.",
+    "receipt": "evidence/preview-caption-check.json",
+    "geometry_project_and_existing_previews_byte_unchanged": true
+  }
+}

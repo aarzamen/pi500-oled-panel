@@ -1,0 +1,4 @@
+# Preserve native CAD export bytes across platforms.
+*.step -text -diff
+*.stl -text -diff
+*.3mf -text -diff

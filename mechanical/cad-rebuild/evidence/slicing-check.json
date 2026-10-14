@@ -1,0 +1,144 @@
+{
+  "validation_date": "2026-10-14",
+  "slicer": "Bambu Studio 02.06.01.55",
+  "cli_process_exit_code": 0,
+  "slicer_return_code": 0,
+  "slicer_result": "Success.",
+  "input_file": "OLED-case-CAD-v3.3mf",
+  "input_sha256": "b1fa19fb895c1a4dc1e3359bdd49f62c9f88f8f7693eb6d3961eb139700d5dc8",
+  "print_profile": {
+    "printer": "Bambu Lab X1 Carbon 0.4 nozzle",
+    "filament": [
+      "ABS"
+    ],
+    "layer_height_mm": 0.2,
+    "walls": 3,
+    "infill": "20%",
+    "supports_enabled": true
+  },
+  "plates": [
+    {
+      "plate": 1,
+      "objects": [
+        {
+          "name": "CAD v3 - front",
+          "triangles": 11816,
+          "bbox_mm": {
+            "depth": 33.39999771118164,
+            "height": 8.0,
+            "width": 51.30000305175781,
+            "x": 54.349998474121094,
+            "y": 88.30000305175781,
+            "z": 0.0
+          }
+        },
+        {
+          "name": "CAD v3 - back-dual-knockouts",
+          "triangles": 4324,
+          "bbox_mm": {
+            "depth": 33.39999771118164,
+            "height": 7.650000095367432,
+            "width": 51.30000305175781,
+            "x": 124.3499984741211,
+            "y": 88.30000305175781,
+            "z": -8.881784197001252e-16
+          }
+        },
+        {
+          "name": "CAD v3 - button 1",
+          "triangles": 1052,
+          "bbox_mm": {
+            "depth": 5.100003242492676,
+            "height": 3.305000066757202,
+            "width": 7.600003242492676,
+            "x": 201.1999969482422,
+            "y": 82.44999694824219,
+            "z": 0.0
+          }
+        },
+        {
+          "name": "CAD v3 - button 2",
+          "triangles": 1052,
+          "bbox_mm": {
+            "depth": 5.100003242492676,
+            "height": 3.305000066757202,
+            "width": 7.600003242492676,
+            "x": 201.1999969482422,
+            "y": 92.44999694824219,
+            "z": 0.0
+          }
+        },
+        {
+          "name": "CAD v3 - button 3",
+          "triangles": 1052,
+          "bbox_mm": {
+            "depth": 5.100003242492676,
+            "height": 3.305000066757202,
+            "width": 7.600003242492676,
+            "x": 201.1999969482422,
+            "y": 102.44999694824219,
+            "z": 0.0
+          }
+        },
+        {
+          "name": "CAD v3 - button 4",
+          "triangles": 1052,
+          "bbox_mm": {
+            "depth": 5.100003242492676,
+            "height": 3.305000066757202,
+            "width": 7.600003242492676,
+            "x": 201.1999969482422,
+            "y": 112.44999694824219,
+            "z": 0.0
+          }
+        }
+      ],
+      "gcode_sha256": "10482dfa2acbce4bead06acbb0cc7cbb95964d5217b3919b99a8647c82c1da36",
+      "estimated_seconds": 1454.4488525390625,
+      "estimated_filament_g": 6.727604866027832,
+      "end_sequence": {
+        "bed_off": true,
+        "hotend_off": true,
+        "filament_unload": true,
+        "no_custom_bed_hold": true
+      },
+      "slicer_warning_message": ""
+    },
+    {
+      "plate": 2,
+      "objects": [
+        {
+          "name": "CAD v3 - stand",
+          "triangles": 3548,
+          "bbox_mm": {
+            "depth": 36.0,
+            "height": 17.155271530151367,
+            "width": 56.79999542236328,
+            "x": 361.6000061035156,
+            "y": 87.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "gcode_sha256": "39c7ef3ff8081541d958e7bed46985b0d97f3fff15c0c644fcdd42e300095d69",
+      "estimated_seconds": 1261.9447021484375,
+      "estimated_filament_g": 5.296887397766113,
+      "end_sequence": {
+        "bed_off": true,
+        "hotend_off": true,
+        "filament_unload": true,
+        "no_custom_bed_hold": true
+      },
+      "slicer_warning_message": ""
+    }
+  ],
+  "object_count": 7,
+  "software_log_notes": [
+    "CLI reported no project filament colors; the configured Generic ABS single-filament project sliced successfully.",
+    "Tree support defaulted to organic support.",
+    "CLI created the missing temporary output directory."
+  ],
+  "print_sent": false,
+  "physical_fit_status": "unverified",
+  "published_project": "Editable unsliced project; generated G-code is retained outside the public kit."
+}
